@@ -7,7 +7,7 @@ import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt.strategy';
 import { LocalStrategy } from './local.strategy';
 import { jwtConstants } from 'src/common/constants/constants';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+
 @Module({
 	imports: [
 		forwardRef(() => UsersModule),
@@ -17,8 +17,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 			signOptions: { expiresIn: '24h' },
 		}),
 	],
-	providers: [AuthService, JwtStrategy, LocalStrategy, JwtAuthGuard],
+	providers: [AuthService, JwtStrategy, LocalStrategy],
 	controllers: [AuthController],
-	exports: [AuthService],
+	exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
