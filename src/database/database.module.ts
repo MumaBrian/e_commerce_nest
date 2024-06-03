@@ -9,6 +9,7 @@ import { Category } from './entities/category.entity';
 import { Payment } from './entities/payment.entity';
 import { Receipt } from './entities/receipt.entity';
 import { Warranty } from './entities/warranty.entity';
+import { Image } from './entities/image.entity';
 
 @Module({
 	imports: [
@@ -30,8 +31,9 @@ import { Warranty } from './entities/warranty.entity';
 					Payment,
 					Receipt,
 					Warranty,
+					Image,
 				],
-				synchronize: true, // Set to false in production
+				synchronize: true,
 			}),
 			inject: [ConfigService],
 		}),
@@ -44,6 +46,7 @@ import { Warranty } from './entities/warranty.entity';
 			Payment,
 			Receipt,
 			Warranty,
+			Image,
 		]),
 	],
 })

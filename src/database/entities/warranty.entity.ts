@@ -3,8 +3,8 @@ import { Product } from './product.entity';
 
 @Entity()
 export class Warranty {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
 	@ManyToOne(() => Product, (product) => product.warranties)
 	product: Product;

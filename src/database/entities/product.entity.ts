@@ -8,10 +8,12 @@ import {
 import { Category } from './category.entity';
 import { OrderItem } from './order-item.entity';
 import { Warranty } from './warranty.entity';
+import { Image } from './image.entity';
+
 @Entity()
 export class Product {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
 	@Column()
 	name: string;
@@ -27,6 +29,9 @@ export class Product {
 
 	@ManyToOne(() => Category, (category) => category.products)
 	category: Category;
+
+	@OneToMany(() => Image, (image) => image.product)
+	images: Image[];
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.product)
 	orderItems: OrderItem[];

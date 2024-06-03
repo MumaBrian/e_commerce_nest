@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+	Injectable,
+	NotFoundException,
+	ConflictException,
+	InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
@@ -12,42 +17,76 @@ export class UsersService {
 		private usersRepository: Repository<User>,
 	) {}
 
-	create(createUserDto: CreateUserDto) {
+	async create(createUserDto: CreateUserDto): Promise<User> {
+		const existingUser = await this.usersRepository.findOne({
+			where: { email: createUserDto.email },
+		});
+		if (existingUser) {
+			throw new ConflictException(
+				`User with email ${createUserDto.email} already exists`,
+			);
+		}
+
 		const user = this.usersRepository.create(createUserDto);
-		return this.usersRepository.save(user);
+		try {
+			return await this.usersRepository.save(user);
+		} catch (error) {
+			throw new InternalServerErrorException('Error creating user');
+		}
 	}
 
-	findAll() {
+	findAll(): Promise<User[]> {
 		return this.usersRepository.find();
 	}
 
-	findOne(id: number) {
-		return this.usersRepository.findOne({ where: { id } });
+	async findOne(id: string): Promise<User> {
+		const user = await this.usersRepository.findOne({ where: { id } });
+		if (!user) {
+			throw new NotFoundException(`User with ID ${id} not found`);
+		}
+		return user;
 	}
 
-	findByEmail(email: string) {
-		return this.usersRepository.findOne({ where: { email } });
+	async findByEmail(email: string): Promise<User> {
+		const user = await this.usersRepository.findOne({ where: { email } });
+		if (!user) {
+			throw new NotFoundException(`User with email ${email} not found`);
+		}
+		return user;
 	}
 
-	async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-		const updateResult = await this.usersRepository.update(id, updateUserDto);
-		console.log("update:",updateResult)
-		
+	async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+		const updateResult = await this.usersRepository.update(
+			id,
+			updateUserDto,
+		);
 		if (updateResult.affected === 0) {
-			throw new Error(`User with id ${id} not found`);
+			throw new NotFoundException(`User with ID ${id} not found`);
 		}
-		
-		const updatedUser = await this.usersRepository.findOne({ where: { id } });
-		
+
+		const updatedUser = await this.usersRepository.findOne({
+			where: { id },
+		});
 		if (!updatedUser) {
-			throw new Error(`User with id ${id} not found after update`);
+			throw new InternalServerErrorException(
+				`User with ID ${id} not found after update`,
+			);
 		}
-		
+
 		return updatedUser;
 	}
-	
 
-	remove(id: number) {
-		return this.usersRepository.delete(id);
+	async remove(id: string): Promise<void> {
+		const user = await this.findOne(id);
+		if (!user) {
+			throw new NotFoundException(`User with ID ${id} not found`);
+		}
+
+		const deleteResult = await this.usersRepository.delete(id);
+		if (deleteResult.affected === 0) {
+			throw new InternalServerErrorException(
+				`Failed to delete User with ID ${id}`,
+			);
+		}
 	}
 }

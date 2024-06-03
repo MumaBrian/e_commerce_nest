@@ -14,25 +14,39 @@ export class AuthService {
 
 	async validateUser(email: string, pass: string): Promise<any> {
 		const user = await this.usersService.findByEmail(email);
-		if (user && (await bcrypt.compare(pass, user.password))) {
-			const { password, ...result } = user;
-			return result;
+		if (!user) {
+			throw new HttpException(
+				'Invalid credentials',
+				HttpStatus.UNAUTHORIZED,
+			);
 		}
-		return null;
+		const isPasswordValid = await bcrypt.compare(pass, user.password);
+		if (!isPasswordValid) {
+			throw new HttpException(
+				'Invalid credentials',
+				HttpStatus.UNAUTHORIZED,
+			);
+		}
+		const { password, ...result } = user;
+		return result;
 	}
 
 	async login(loginDto: LoginDto) {
 		try {
-			const user = await this.usersService.findByEmail(loginDto.email);
-			if (!user) {
-				throw new Error('User not found');
-			}
-			const payload = { username: user.username, sub: user.id };
+			const user = await this.validateUser(
+				loginDto.email,
+				loginDto.password,
+			);
+			const payload = {
+				username: user.username,
+				sub: user.id,
+				roles: user.roles,
+			};
 			return {
 				access_token: this.jwtService.sign(payload),
 			};
 		} catch (error) {
-			throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+			throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
 		}
 	}
 
@@ -50,7 +64,13 @@ export class AuthService {
 
 			return await this.usersService.create(registerDto);
 		} catch (error) {
-			throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+			if (error instanceof HttpException) {
+				throw error;
+			}
+			throw new HttpException(
+				'Registration failed',
+				HttpStatus.BAD_REQUEST,
+			);
 		}
 	}
 }

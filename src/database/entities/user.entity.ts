@@ -7,25 +7,25 @@ import {
 	BeforeUpdate,
 } from 'typeorm';
 import { Order } from './order.entity';
-import { Role } from './role.enum';
+import { UserRole } from '../enums/user-role.enum';
 import * as bcrypt from 'bcrypt';
 
 @Entity()
 export class User {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
-	@Column()
+	@Column({ unique: true })
 	username: string;
 
-	@Column()
+	@Column({ unique: true })
 	email: string;
 
 	@Column()
 	password: string;
 
-	@Column({ type: 'enum', enum: Role, default: Role.Customer })
-	roles: Role;
+	@Column({ type: 'enum', enum: UserRole, default: UserRole.Customer })
+	roles: UserRole;
 
 	@OneToMany(() => Order, (order) => order.user)
 	orders: Order[];
