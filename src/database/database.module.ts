@@ -10,6 +10,7 @@ import { Payment } from './entities/payment.entity';
 import { Receipt } from './entities/receipt.entity';
 import { Warranty } from './entities/warranty.entity';
 import { Image } from './entities/image.entity';
+import { Customer } from './entities/customer.entity';
 
 @Module({
 	imports: [
@@ -32,6 +33,7 @@ import { Image } from './entities/image.entity';
 					Receipt,
 					Warranty,
 					Image,
+					Customer,
 				],
 				synchronize: true,
 			}),
@@ -47,6 +49,7 @@ import { Image } from './entities/image.entity';
 			Receipt,
 			Warranty,
 			Image,
+			Customer,
 		]),
 	],
 })

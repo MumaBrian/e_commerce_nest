@@ -7,6 +7,7 @@ import { ProductsModule } from './products/products.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { CategoriesModule } from './categories/categories.module';
+import { CustomerModule } from './customer/customer.module';
 
 @Module({
 	imports: [
@@ -16,6 +17,7 @@ import { CategoriesModule } from './categories/categories.module';
 		UsersModule,
 		ProductsModule,
 		CategoriesModule,
+		CustomerModule,
 	],
 	providers: [
 		{

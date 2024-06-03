@@ -3,12 +3,14 @@ import {
 	NotFoundException,
 	ConflictException,
 	InternalServerErrorException,
+	BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -88,5 +90,50 @@ export class UsersService {
 				`Failed to delete User with ID ${id}`,
 			);
 		}
+	}
+
+	async updateProfile(
+		id: string,
+		updateUserDto: UpdateUserDto,
+	): Promise<User> {
+		const user = await this.usersRepository.findOne({
+			where: { id },
+		});
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		await this.usersRepository.update(id, updateUserDto);
+
+		return this.usersRepository.findOne({
+			where: { id },
+		});
+	}
+
+	async updatePassword(
+		id: string,
+		currentPassword: string,
+		newPassword: string,
+	): Promise<void> {
+		const user = await this.usersRepository.findOne({
+			where: {
+				id,
+			},
+		});
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const isPasswordValid = await bcrypt.compare(
+			currentPassword,
+			user.password,
+		);
+		if (!isPasswordValid) {
+			throw new BadRequestException('Cannot update password');
+		}
+
+		user.password = await bcrypt.hash(newPassword, 10);
+
+		await this.usersRepository.save(user);
 	}
 }
