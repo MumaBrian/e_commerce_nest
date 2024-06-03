@@ -7,13 +7,12 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { OrderItem } from './order-item.entity';
-import { Payment } from './payment.entity';
-import { Receipt } from './receipt.entity';
-
+import { OrderStatus } from '../enums/order-status.enum';
+import { PaymentMethod } from '../enums/payment-method.enum';
 @Entity()
 export class Order {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
 	@ManyToOne(() => User, (user) => user.orders)
 	user: User;
@@ -24,15 +23,9 @@ export class Order {
 	@Column('decimal')
 	total: number;
 
-	@Column()
-	status: string;
+	@Column({ type: 'enum', enum: OrderStatus })
+	status: OrderStatus;
 
-	@Column()
-	paymentMethod: string;
-
-	@OneToMany(() => Payment, (payment) => payment.order)
-	payments: Payment;
-
-	@OneToMany(() => Receipt, (receipt) => receipt.order)
-	receipts: Receipt;
+	@Column({ type: 'enum', enum: PaymentMethod })
+	paymentMethod: PaymentMethod;
 }

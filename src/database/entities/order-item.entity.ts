@@ -4,8 +4,8 @@ import { Product } from './product.entity';
 
 @Entity()
 export class OrderItem {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
 	@ManyToOne(() => Order, (order) => order.items)
 	order: Order;

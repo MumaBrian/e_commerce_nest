@@ -42,7 +42,7 @@ export class ProductsService {
 		return this.productsRepository.find({ relations: ['category'] });
 	}
 
-	async findOne(id: number): Promise<Product> {
+	async findOne(id: string): Promise<Product> {
 		const product = await this.productsRepository.findOne({
 			where: { id },
 			relations: ['category'],
@@ -55,7 +55,7 @@ export class ProductsService {
 		return product;
 	}
 
-	async update(id: number, updateProductDto: UpdateProductDto) {
+	async update(id: string, updateProductDto: UpdateProductDto) {
 		const existingProduct = await this.productsRepository.findOne({
 			where: { id },
 		});
@@ -86,7 +86,7 @@ export class ProductsService {
 		});
 	}
 
-	async remove(id: number) {
+	async remove(id: string) {
 		const existingProduct = await this.productsRepository.findOne({
 			where: { id },
 		});

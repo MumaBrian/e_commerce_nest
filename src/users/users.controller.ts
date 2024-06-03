@@ -35,20 +35,20 @@ export class UsersController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	findOne(@Param('id') id: string) {
-		return this.usersService.findOne(+id);
+		return this.usersService.findOne(id);
 	}
 
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-		return this.usersService.update(+id, updateUserDto);
+		return this.usersService.update(id, updateUserDto);
 	}
 
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	remove(@Param('id') id: string) {
-		return this.usersService.remove(+id);
+		return this.usersService.remove(id);
 	}
 }

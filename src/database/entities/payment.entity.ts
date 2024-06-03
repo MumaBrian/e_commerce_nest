@@ -5,16 +5,16 @@ import {
 	Column,
 	OneToMany,
 } from 'typeorm';
-import { Order } from './order.entity';
+import { OrderItem } from './order-item.entity';
 import { Receipt } from './receipt.entity';
 
 @Entity()
 export class Payment {
-	@PrimaryGeneratedColumn()
-	id: number;
+	@PrimaryGeneratedColumn('uuid')
+	id: string;
 
-	@ManyToOne(() => Order, (order) => order.payments)
-	order: Order;
+	@ManyToOne(() => OrderItem, (orderItem) => orderItem.order)
+	order: OrderItem;
 
 	@Column('decimal')
 	amount: number;
