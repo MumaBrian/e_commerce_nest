@@ -52,9 +52,22 @@ export class AuthService {
 
 	async register(registerDto: RegisterDto) {
 		try {
-			const existingUser = await this.usersService.findByEmail(
-				registerDto.email,
-			);
+			let existingUser;
+			try {
+				existingUser = await this.usersService.findByEmail(
+					registerDto.email,
+				);
+			} catch (error) {
+				if (
+					error instanceof HttpException &&
+					error.getStatus() === HttpStatus.NOT_FOUND
+				) {
+					existingUser = null;
+				} else {
+					throw error;
+				}
+			}
+
 			if (existingUser) {
 				throw new HttpException(
 					'User already exists',
@@ -64,9 +77,7 @@ export class AuthService {
 
 			return await this.usersService.create(registerDto);
 		} catch (error) {
-			if (error instanceof HttpException) {
-				throw error;
-			}
+			console.error('Registration error:', error.message);
 			throw new HttpException(
 				'Registration failed',
 				HttpStatus.BAD_REQUEST,

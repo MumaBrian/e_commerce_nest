@@ -15,6 +15,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../database/enums/user-role.enum';
+import { SelfGuard } from '../common/guards/self.guard';
 
 @Controller('users')
 export class UsersController {
@@ -40,8 +41,8 @@ export class UsersController {
 	}
 
 	@Patch(':id')
-	@UseGuards(JwtAuthGuard)
-	@Roles(UserRole.Admin)
+	@UseGuards(JwtAuthGuard, SelfGuard)
+	@Roles(UserRole.Customer)
 	async update(
 		@Param('id') id: string,
 		@Body() updateUserDto: UpdateUserDto,
@@ -50,12 +51,13 @@ export class UsersController {
 	}
 
 	@Delete(':id')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Admin)
 	async remove(@Param('id') id: string) {
 		return await this.usersService.remove(id);
 	}
-
+	@UseGuards(JwtAuthGuard, SelfGuard)
+	@Roles(UserRole.Admin, UserRole.Customer)
 	@Put(':id/profile')
 	async updateProfile(
 		@Param('id') id: string,
@@ -64,6 +66,8 @@ export class UsersController {
 		return await this.usersService.updateProfile(id, updateUserDto);
 	}
 
+	@UseGuards(JwtAuthGuard, SelfGuard)
+	@Roles(UserRole.Admin)
 	@Put(':id/password')
 	async updatePassword(
 		@Param('id') id: string,

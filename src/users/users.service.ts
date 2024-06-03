@@ -20,19 +20,20 @@ export class UsersService {
 	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<User> {
-		const existingUser = await this.usersRepository.findOne({
-			where: { email: createUserDto.email },
-		});
-		if (existingUser) {
-			throw new ConflictException(
-				`User with email ${createUserDto.email} already exists`,
-			);
-		}
-
-		const user = this.usersRepository.create(createUserDto);
 		try {
+			const existingUser = await this.usersRepository.findOne({
+				where: { email: createUserDto.email },
+			});
+			if (existingUser) {
+				throw new ConflictException(
+					`User with email ${createUserDto.email} already exists`,
+				);
+			}
+
+			const user = this.usersRepository.create(createUserDto);
 			return await this.usersRepository.save(user);
 		} catch (error) {
+			console.error('Error creating user:', error.message);
 			throw new InternalServerErrorException('Error creating user');
 		}
 	}
