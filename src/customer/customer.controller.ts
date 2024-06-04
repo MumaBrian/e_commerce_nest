@@ -14,7 +14,9 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../database/enums/user-role.enum';
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 
+@ApiTags("customers")
 @Controller('customers')
 export class CustomerController {
 	constructor(private readonly customerService: CustomerService) {}
@@ -29,6 +31,7 @@ export class CustomerController {
 	@Get()
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
+	@ApiBearerAuth("authenticationToken")
 	async findAll() {
 		return await this.customerService.findAll();
 	}
@@ -36,6 +39,7 @@ export class CustomerController {
 	@Get(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
+	@ApiBearerAuth("authenticationToken")
 	async findOne(@Param('id') id: string) {
 		return await this.customerService.findOne(id);
 	}
@@ -43,6 +47,7 @@ export class CustomerController {
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
+	@ApiBearerAuth("authenticationToken")
 	async update(
 		@Param('id') id: string,
 		@Body() updateCustomerDto: UpdateCustomerDto,
@@ -53,6 +58,7 @@ export class CustomerController {
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
+	@ApiBearerAuth("authenticationToken")
 	async remove(@Param('id') id: string) {
 		return await this.customerService.remove(id);
 	}
@@ -60,6 +66,7 @@ export class CustomerController {
 	@Get('products/browse')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer)
+	@ApiBearerAuth("authenticationToken")
 	async browseProducts() {
 		return await this.customerService.browseProducts();
 	}
@@ -67,6 +74,7 @@ export class CustomerController {
 	@Get('products/:id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer)
+	@ApiBearerAuth("authenticationToken")
 	async viewProduct(@Param('id') id: string) {
 		return await this.customerService.viewProduct(id);
 	}
@@ -74,6 +82,7 @@ export class CustomerController {
 	@Post('orders')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer)
+	@ApiBearerAuth("authenticationToken")
 	async placeOrder(@Body() orderDetails: any) {
 		return await this.customerService.placeOrder(orderDetails);
 	}
@@ -81,6 +90,7 @@ export class CustomerController {
 	@Get('orders')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer)
+	@ApiBearerAuth("authenticationToken")
 	async viewOrders(@Param('userId') userId: string) {
 		return await this.customerService.viewOrders(userId);
 	}
@@ -88,6 +98,7 @@ export class CustomerController {
 	@Get('receipts/:orderId')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer)
+	@ApiBearerAuth("authenticationToken")
 	async viewReceipt(@Param('orderId') orderId: string) {
 		return await this.customerService.viewReceipt(orderId);
 	}
@@ -95,6 +106,7 @@ export class CustomerController {
 	@Patch(':id/details')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer)
+	@ApiBearerAuth("authenticationToken")
 	async updateDetails(
 		@Param('id') id: string,
 		@Body() updateCustomerDto: UpdateCustomerDto,

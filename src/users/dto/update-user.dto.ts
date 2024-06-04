@@ -1,5 +1,7 @@
 import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
 import { UserRole } from 'src/database/enums/user-role.enum';
+import { ApiProperty } from '@nestjs/swagger';
+
 export class UpdateUserDto {
 	@IsString()
 	@IsOptional()
