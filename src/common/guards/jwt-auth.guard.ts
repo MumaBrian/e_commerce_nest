@@ -1,7 +1,13 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+	Injectable,
+	CanActivate,
+	ExecutionContext,
+	ForbiddenException,
+	UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
-
+import { jwtConstants } from '../constants/constants';
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
 	constructor(
@@ -15,14 +21,41 @@ export class JwtAuthGuard implements CanActivate {
 			context.getHandler(),
 		);
 		if (!roles) {
+			console.error('JwtAuthGuard: No roles defined, allowing access');
 			return true;
 		}
+
 		const request = context.switchToHttp().getRequest();
-		const token = request.headers.authorization?.split(' ')[1];
-		if (!token) {
-			return false;
+		const authHeader = request.headers.authorization;
+
+		if (!authHeader) {
+			throw new UnauthorizedException('Authorization header not found');
 		}
-		const user = this.jwtService.verify(token);
-		return roles.includes(user.roles);
+
+		const token = authHeader.split(' ')[1];
+		if (!token) {
+			throw new UnauthorizedException('Token not found');
+		}
+
+		try {
+			console.log('JwtAuthGuard: Verifying token');
+			const user = this.jwtService.verify(token, {
+				secret: jwtConstants.secret,
+			});
+
+			if (!roles.includes(user.roles)) {
+				console.error(
+					'JwtAuthGuard: User does not have the required roles',
+				);
+				throw new ForbiddenException(
+					'User does not have the required roles',
+				);
+			}
+
+			request.user = user;
+			return true;
+		} catch (error) {
+			throw new ForbiddenException('Invalid token:', error.message);
+		}
 	}
 }

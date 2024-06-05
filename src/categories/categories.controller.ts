@@ -14,9 +14,9 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../database/enums/user-role.enum';
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-@ApiTags("categories")
+@ApiTags('categories')
 @Controller('categories')
 export class CategoriesController {
 	constructor(private readonly categoriesService: CategoriesService) {}
@@ -24,39 +24,41 @@ export class CategoriesController {
 	@Post()
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
-	@ApiBearerAuth("authenticationToken")
-	create(@Body() createCategoryDto: CreateCategoryDto) {
-		return this.categoriesService.create(createCategoryDto);
+	@ApiBearerAuth('authenticationToken')
+	async create(@Body() createCategoryDto: CreateCategoryDto) {
+		return await this.categoriesService.create(createCategoryDto);
 	}
 
 	@Get()
-	@ApiBearerAuth("authenticationToken")
-	findAll() {
-		return this.categoriesService.findAll();
+	@UseGuards(JwtAuthGuard)
+	@Roles(UserRole.Admin)
+	@ApiBearerAuth('authenticationToken')
+	async findAll() {
+		return await this.categoriesService.findAll();
 	}
 
 	@Get(':id')
-	@ApiBearerAuth("authenticationToken")
-	findOne(@Param('id') id: string) {
-		return this.categoriesService.findOne(id);
+	@ApiBearerAuth('authenticationToken')
+	async findOne(@Param('id') id: string) {
+		return await this.categoriesService.findOne(id);
 	}
 
 	@Patch(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
-	@ApiBearerAuth("authenticationToken")
-	update(
+	@ApiBearerAuth('authenticationToken')
+	async update(
 		@Param('id') id: string,
 		@Body() updateCategoryDto: UpdateCategoryDto,
 	) {
-		return this.categoriesService.update(id, updateCategoryDto);
+		return await this.categoriesService.update(id, updateCategoryDto);
 	}
 
 	@Delete(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
-	@ApiBearerAuth("authenticationToken")
-	remove(@Param('id') id: string) {
-		return this.categoriesService.remove(id);
+	@ApiBearerAuth('authenticationToken')
+	async remove(@Param('id') id: string) {
+		return await this.categoriesService.remove(id);
 	}
 }
