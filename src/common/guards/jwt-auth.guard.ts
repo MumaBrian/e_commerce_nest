@@ -21,7 +21,7 @@ export class JwtAuthGuard implements CanActivate {
 			context.getHandler(),
 		);
 		if (!roles) {
-			console.error('JwtAuthGuard: No roles defined, allowing access');
+			console.error('No roles defined, allowing access');
 			return true;
 		}
 

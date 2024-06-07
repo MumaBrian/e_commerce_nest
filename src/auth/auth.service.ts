@@ -80,7 +80,11 @@ export class AuthService {
 				const existingAdmin = await this.usersService.findAdmin();
 				if (existingAdmin) {
 					throw new HttpException(
-						'An admin already exists',
+						{
+							status: HttpStatus.FORBIDDEN,
+							error: 'Change user role to Customer',
+							message: 'Change user role to Customer',
+						},
 						HttpStatus.FORBIDDEN,
 					);
 				}
