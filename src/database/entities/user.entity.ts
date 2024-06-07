@@ -4,7 +4,6 @@ import {
 	PrimaryGeneratedColumn,
 	OneToMany,
 	BeforeInsert,
-	BeforeUpdate,
 } from 'typeorm';
 import { Order } from './order.entity';
 import { UserRole } from '../enums/user-role.enum';
@@ -31,7 +30,6 @@ export class User {
 	orders: Order[];
 
 	@BeforeInsert()
-	@BeforeUpdate()
 	async hashPassword() {
 		if (this.password) {
 			this.password = await bcrypt.hash(this.password, 10);

@@ -15,6 +15,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../database/enums/user-role.enum';
 import { SelfGuard } from '../common/guards/self.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -73,13 +74,8 @@ export class UsersController {
 	@ApiBearerAuth('authenticationToken')
 	async updatePassword(
 		@Param('id') id: string,
-		@Body('currentPassword') currentPassword: string,
-		@Body('newPassword') newPassword: string,
+		@Body() updatePasswordDto: UpdatePasswordDto,
 	) {
-		return await this.usersService.updatePassword(
-			id,
-			currentPassword,
-			newPassword,
-		);
+		return await this.usersService.updatePassword(id, updatePasswordDto);
 	}
 }

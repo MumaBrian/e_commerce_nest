@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from 'src/database/enums/user-role.enum';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 @Injectable()
 export class UsersService {
 	constructor(
@@ -113,14 +114,11 @@ export class UsersService {
 
 	async updatePassword(
 		id: string,
-		currentPassword: string,
-		newPassword: string,
+		updatePasswordDto: UpdatePasswordDto,
 	): Promise<void> {
-		const user = await this.usersRepository.findOne({
-			where: {
-				id,
-			},
-		});
+		const { currentPassword, newPassword } = updatePasswordDto;
+		const user = await this.usersRepository.findOne({ where: { id } });
+
 		if (!user) {
 			throw new NotFoundException('User not found');
 		}
@@ -130,10 +128,11 @@ export class UsersService {
 			user.password,
 		);
 		if (!isPasswordValid) {
-			throw new BadRequestException('Cannot update password');
+			throw new BadRequestException('Current password is incorrect');
 		}
 
-		user.password = await bcrypt.hash(newPassword, 10);
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+		user.password = hashedPassword;
 
 		await this.usersRepository.save(user);
 	}

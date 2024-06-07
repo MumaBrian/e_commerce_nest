@@ -21,13 +21,16 @@ export class AuthService {
 				HttpStatus.UNAUTHORIZED,
 			);
 		}
+
 		const isPasswordValid = await bcrypt.compare(pass, user.password);
+
 		if (!isPasswordValid) {
 			throw new HttpException(
 				'Invalid credentials',
 				HttpStatus.UNAUTHORIZED,
 			);
 		}
+
 		const { password, ...result } = user;
 		return result;
 	}
