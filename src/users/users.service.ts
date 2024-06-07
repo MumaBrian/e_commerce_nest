@@ -11,7 +11,7 @@ import { User } from '../database/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
-
+import { UserRole } from 'src/database/enums/user-role.enum';
 @Injectable()
 export class UsersService {
 	constructor(
@@ -136,5 +136,11 @@ export class UsersService {
 		user.password = await bcrypt.hash(newPassword, 10);
 
 		await this.usersRepository.save(user);
+	}
+
+	async findAdmin(): Promise<User | null> {
+		return await this.usersRepository.findOne({
+			where: { roles: UserRole.Admin },
+		});
 	}
 }

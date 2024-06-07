@@ -11,8 +11,5 @@ export default () => ({
 		secret: process.env.JWT_SECRET,
 		expiresIn: process.env.JWT_EXPIRES_IN,
 	},
-	mailgun: {
-		apiKey: process.env.MAILGUN_API_KEY,
-		domain: process.env.MAILGUN_DOMAIN,
-	},
+	cors: { origin: process.env.CORS_ORIGINS },
 });

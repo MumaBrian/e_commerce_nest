@@ -4,6 +4,7 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from 'src/database/enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
@@ -73,6 +74,16 @@ export class AuthService {
 					'User already exists',
 					HttpStatus.CONFLICT,
 				);
+			}
+
+			if (registerDto.role === UserRole.Admin) {
+				const existingAdmin = await this.usersService.findAdmin();
+				if (existingAdmin) {
+					throw new HttpException(
+						'An admin already exists',
+						HttpStatus.FORBIDDEN,
+					);
+				}
 			}
 
 			return await this.usersService.create(registerDto);
