@@ -10,6 +10,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { CustomerModule } from './customer/customer.module';
 import { AdminModule } from './admin/admin.module';
 // import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
+import { OrdersModule } from './orders/orders.module';
 @Module({
 	imports: [
 		AppConfigModule,
@@ -20,6 +21,7 @@ import { AdminModule } from './admin/admin.module';
 		CategoriesModule,
 		CustomerModule,
 		AdminModule,
+		OrdersModule,
 	],
 	providers: [
 		{

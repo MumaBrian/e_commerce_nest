@@ -19,26 +19,27 @@ export class ProductsService {
 		private categoriesRepository: Repository<Category>,
 	) {}
 
-	async create(createProductDto: CreateProductDto) {
-		const category = await this.categoriesRepository.findOne({
-			where: { name: createProductDto.category },
-		});
+	async create(createProductDto: CreateProductDto): Promise<Product> {
+		const { category: categoryName, ...productData } = createProductDto;
 
+		const category = await this.categoriesRepository.findOne({
+			where: { name: categoryName },
+		});
 		if (!category) {
 			throw new BadRequestException(
-				`Category ${createProductDto.category} does not exist`,
+				`Category '${categoryName}' does not exist`,
 			);
 		}
 
 		const product = this.productsRepository.create({
-			...createProductDto,
+			...productData,
 			category,
 		});
 
 		return this.productsRepository.save(product);
 	}
 
-	findAll() {
+	async findAll(): Promise<Product[]> {
 		return this.productsRepository.find({ relations: ['category'] });
 	}
 
@@ -49,34 +50,39 @@ export class ProductsService {
 		});
 
 		if (!product) {
-			throw new NotFoundException(`Product with ID ${id} not found`);
+			throw new NotFoundException(`Product with ID '${id}' not found`);
 		}
 
 		return product;
 	}
 
-	async update(id: string, updateProductDto: UpdateProductDto) {
+	async update(
+		id: string,
+		updateProductDto: UpdateProductDto,
+	): Promise<Product> {
+		const { category: categoryName, ...productData } = updateProductDto;
+
 		const existingProduct = await this.productsRepository.findOne({
 			where: { id },
 		});
 		if (!existingProduct) {
-			throw new NotFoundException(`Product with ID ${id} not found`);
+			throw new NotFoundException(`Product with ID '${id}' not found`);
 		}
 
-		const category = updateProductDto.category
-			? await this.categoriesRepository.findOne({
-					where: { name: updateProductDto.category },
-				})
-			: undefined;
-
-		if (updateProductDto.category && !category) {
-			throw new BadRequestException(
-				`Category ${updateProductDto.category} does not exist`,
-			);
+		let category: Category | undefined;
+		if (categoryName) {
+			category = await this.categoriesRepository.findOne({
+				where: { name: categoryName },
+			});
+			if (!category) {
+				throw new BadRequestException(
+					`Category '${categoryName}' does not exist`,
+				);
+			}
 		}
 
 		await this.productsRepository.update(id, {
-			...updateProductDto,
+			...productData,
 			category,
 		});
 
@@ -86,15 +92,15 @@ export class ProductsService {
 		});
 	}
 
-	async remove(id: string) {
+	async remove(id: string): Promise<{ message: string }> {
 		const existingProduct = await this.productsRepository.findOne({
 			where: { id },
 		});
 		if (!existingProduct) {
-			throw new NotFoundException(`Product with ID ${id} not found`);
+			throw new NotFoundException(`Product with ID '${id}' not found`);
 		}
 
 		await this.productsRepository.delete(id);
-		return { message: `Product with ID ${id} deleted successfully` };
+		return { message: `Product with ID '${id}' deleted successfully` };
 	}
 }
