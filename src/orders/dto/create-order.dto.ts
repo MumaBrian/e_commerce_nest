@@ -1,15 +1,23 @@
-import { IsString, IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
+import {
+	IsString,
+	IsNotEmpty,
+	IsNumber,
+	IsEnum,
+	ValidateNested,
+} from 'class-validator';
 import { OrderStatus } from 'src/database/enums/order-status.enum';
 import { PaymentMethod } from 'src/database/enums/payment-method.enum';
+import { CreateOrderItemDto } from 'src/orderitems/dto/create-order-item.dto';
+import { Type } from 'class-transformer';
 
 export class CreateOrderDto {
 	@IsString()
 	@IsNotEmpty()
 	customerId: string;
 
-	@IsString()
-	@IsNotEmpty()
-	itemsId: string;
+	@ValidateNested({ each: true })
+	@Type(() => CreateOrderItemDto)
+	items: CreateOrderItemDto[];
 
 	@IsNumber()
 	total: number;
@@ -18,5 +26,5 @@ export class CreateOrderDto {
 	orderStatus: OrderStatus;
 
 	@IsEnum(PaymentMethod)
-	PaymentMethod: PaymentMethod;
+	paymentMethod: PaymentMethod;
 }

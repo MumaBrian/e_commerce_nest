@@ -19,5 +19,5 @@ export class CreateProductDto {
 
 	@IsString()
 	@IsNotEmpty()
-	category: string;
+	category: string[];
 }

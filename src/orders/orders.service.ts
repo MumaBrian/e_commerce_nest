@@ -1,48 +1,75 @@
-import {
-	Injectable,
-	NotFoundException,
-	BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../database/entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { OrderItem } from '../database/entities/order-item.entity';
+import { Product } from 'src/database/entities/product.entity';
+import { Customer } from 'src/database/entities/customer.entity';
 import { UpdateOrderDto } from './dto/update-order.dto';
-
 @Injectable()
 export class OrdersService {
 	constructor(
 		@InjectRepository(Order)
 		private ordersRepository: Repository<Order>,
+		@InjectRepository(OrderItem)
+		private orderItemsRepository: Repository<OrderItem>,
+		@InjectRepository(Product)
+		private productsRepository: Repository<Product>,
+		@InjectRepository(Customer)
+		private customersRepository: Repository<Customer>,
 	) {}
 
-	async create(createOrderDto: CreateOrderDto): Promise<Order> {
-		if (!createOrderDto.itemsId || createOrderDto.itemsId.length === 0) {
-			throw new BadRequestException('Order items must be provided');
-		}
+	async create(createOrderDto: CreateOrderDto) {
+		const { customerId, items, orderStatus, paymentMethod } =
+			createOrderDto;
 
-		for (const item of createOrderDto.itemsId) {
-			if (item.length === 0) {
-				throw new BadRequestException('Invalid order item');
-			}
-		}
-
-		if (!createOrderDto.customerId) {
-			throw new BadRequestException('Customer ID must be provided');
-		}
-
-		const existingOrder = await this.ordersRepository.findOne({
-			where: { customer: { id: createOrderDto.customerId } },
+		// Find the customer by ID
+		const customer = await this.customersRepository.findOne({
+			where: { id: customerId },
 		});
-
-		if (existingOrder) {
-			throw new BadRequestException(
-				`Order for customer ID '${createOrderDto.customerId}' already exists`,
-			);
+		if (!customer) {
+			throw new NotFoundException('Customer not found');
 		}
 
-		const order = this.ordersRepository.create(createOrderDto);
-		return this.ordersRepository.save(order);
+		// Initialize order items and calculate the total price
+		const orderItems: OrderItem[] = [];
+		let total = 0;
+
+		for (const item of items) {
+			// Find the product by ID
+			const product = await this.productsRepository.findOne({
+				where: { id: item.productId },
+			});
+			if (!product) {
+				throw new NotFoundException(
+					`Product with ID '${item.productId}' not found`,
+				);
+			}
+
+			// Create an order item
+			const orderItem = new OrderItem();
+			orderItem.product = product;
+			orderItem.quantity = item.quantity;
+			orderItem.price = item.price;
+
+			// Add the order item to the list and update the total price
+			total += orderItem.price;
+			orderItems.push(orderItem);
+		}
+
+		// Create the order entity
+		const order = new Order();
+		order.customer = customer;
+		order.items = orderItems;
+		order.total = total;
+		order.status = orderStatus;
+		order.paymentMethod = paymentMethod;
+
+		// Save the order to the database
+		await this.ordersRepository.save(order);
+
+		return order;
 	}
 
 	async findAll(): Promise<Order[]> {

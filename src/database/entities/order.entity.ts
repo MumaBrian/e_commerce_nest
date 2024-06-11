@@ -19,7 +19,9 @@ export class Order {
 	@ManyToOne(() => Customer, (customer) => customer.orders)
 	customer: Customer;
 
-	@OneToMany(() => OrderItem, (orderItem) => orderItem.order)
+	@OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
+		cascade: true,
+	})
 	items: OrderItem[];
 
 	@Column('decimal')
