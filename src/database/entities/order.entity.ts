@@ -22,7 +22,7 @@ export class Order {
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
 		cascade: true,
 	})
-	items: OrderItem[];
+	OrderItems: OrderItem[];
 
 	@Column('decimal')
 	total: number;

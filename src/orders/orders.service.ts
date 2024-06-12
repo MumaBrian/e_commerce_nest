@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	ConflictException,
+	Injectable,
+	NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from '../database/entities/order.entity';
@@ -7,6 +11,7 @@ import { OrderItem } from '../database/entities/order-item.entity';
 import { Product } from 'src/database/entities/product.entity';
 import { Customer } from 'src/database/entities/customer.entity';
 import { UpdateOrderDto } from './dto/update-order.dto';
+
 @Injectable()
 export class OrdersService {
 	constructor(
@@ -20,57 +25,49 @@ export class OrdersService {
 		private customersRepository: Repository<Customer>,
 	) {}
 
-	// async create(createOrderDto: CreateOrderDto) {
-	// 	const { customerId, items, orderStatus, paymentMethod } =
-	// 		createOrderDto;
+	async create(createOrderDto: CreateOrderDto) {
+		const { customerId, orderItemsId, orderStatus, paymentMethod } =
+			createOrderDto;
 
-	// 	// Find the customer by ID
-	// 	const customer = await this.customersRepository.findOne({
-	// 		where: { id: customerId },
-	// 	});
-	// 	if (!customer) {
-	// 		throw new NotFoundException('Customer not found');
-	// 	}
+		// Check if any order already exists for the current customer
+		const existingOrder = await this.ordersRepository.findOne({
+			where: { customer: { id: customerId } },
+		});
+		if (existingOrder) {
+			throw new ConflictException(
+				'An order already exists for this customer, go ahead and edit the order',
+			);
+		}
 
-	// 	// Initialize order items and calculate the total price
-	// 	const orderItems: OrderItem[] = [];
-	// 	let total = 0;
+		const customer = await this.customersRepository.findOne({
+			where: { id: customerId },
+		});
+		if (!customer) {
+			throw new NotFoundException('Customer not found');
+		}
 
-	// 	for (const item of items) {
-	// 		// Find the product by ID
-	// 		const product = await this.productsRepository.findOne({
-	// 			where: { id: item.productId },
-	// 		});
-	// 		if (!product) {
-	// 			throw new NotFoundException(
-	// 				`Product with ID '${item.productId}' not found`,
-	// 			);
-	// 		}
+		const orderItems =
+			await this.orderItemsRepository.findByIds(orderItemsId);
+		if (orderItems.length !== orderItemsId.length) {
+			throw new NotFoundException('One or more order items not found');
+		}
 
-	// 		// Create an order item
-	// 		const orderItem = new OrderItem();
-	// 		orderItem.product = product;
-	// 		orderItem.quantity = item.quantity;
-	// 		orderItem.price = item.price;
+		const total = orderItems.reduce(
+			(sum, item) => sum + item.quantity * item.price,
+			0,
+		);
 
-	// 		// Add the order item to the list and update the total price
-	// 		total += orderItem.price;
-	// 		orderItems.push(orderItem);
-	// 	}
+		const order = new Order();
+		order.customer = customer;
+		order.OrderItems = orderItems;
+		order.total = total;
+		order.status = orderStatus;
+		order.paymentMethod = paymentMethod;
 
-	// 	// Create the order entity
-	// 	const order = new Order();
-	// 	order.customer = customer;
-	// 	order.items = orderItems;
-	// 	order.total = total;
-	// 	order.status = orderStatus;
-	// 	order.paymentMethod = paymentMethod;
+		await this.ordersRepository.save(order);
 
-	// 	// Save the order to the database
-	// 	await this.ordersRepository.save(order);
-
-	// 	return order;
-	// }
+		return order;
+	}
 
 	async findAll(): Promise<Order[]> {
 		return this.ordersRepository.find({
