@@ -21,13 +21,13 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 export class ProductsController {
 	constructor(private readonly productsService: ProductsService) {}
 
-	// @Post()
-	// @UseGuards(JwtAuthGuard)
-	// @Roles(UserRole.Admin)
-	// @ApiBearerAuth('authenticationToken')
-	// create(@Body() createProductDto: CreateProductDto) {
-	// 	return this.productsService.create(createProductDto);
-	// }
+	@Post()
+	@UseGuards(JwtAuthGuard)
+	@Roles(UserRole.Admin)
+	@ApiBearerAuth('authenticationToken')
+	create(@Body() createProductDto: CreateProductDto) {
+		return this.productsService.create(createProductDto);
+	}
 
 	@Get()
 	@ApiBearerAuth('authenticationToken')

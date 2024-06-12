@@ -18,21 +18,18 @@ export class OrderItemService {
 		private productsRepository: Repository<Product>,
 	) {}
 
-	async addItem(orderId: string, createOrderItemDto: CreateOrderItemDto) {
-		const { productId, quantity, price } = createOrderItemDto;
-		const order = await this.ordersRepository.findOne({
-			where: { id: orderId },
-		});
+	async addItem(productId: string, createOrderItemDto: CreateOrderItemDto) {
+		const { quantity, price } = createOrderItemDto;
+
 		const product = await this.productsRepository.findOne({
 			where: { id: productId },
 		});
 
-		if (!order || !product) {
-			throw new Error('Order or Product not found');
+		if (!product) {
+			throw new Error('Product not found');
 		}
 
 		const orderItem = this.orderItemsRepository.create({
-			order,
 			product,
 			quantity,
 			price,
@@ -41,8 +38,6 @@ export class OrderItemService {
 		await this.orderItemsRepository.save(orderItem);
 
 		// Update order total
-		order.total += price;
-		await this.ordersRepository.save(order);
 
 		return orderItem;
 	}

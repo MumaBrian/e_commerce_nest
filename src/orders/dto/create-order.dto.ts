@@ -9,7 +9,6 @@ import { OrderStatus } from 'src/database/enums/order-status.enum';
 import { PaymentMethod } from 'src/database/enums/payment-method.enum';
 import { CreateOrderItemDto } from 'src/orderitems/dto/create-order-item.dto';
 import { Type } from 'class-transformer';
-
 export class CreateOrderDto {
 	@IsString()
 	@IsNotEmpty()

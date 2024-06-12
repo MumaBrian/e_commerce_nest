@@ -20,13 +20,13 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 export class OrdersController {
 	constructor(private readonly ordersService: OrdersService) {}
 
-	@Post()
-	@UseGuards(JwtAuthGuard)
-	@Roles(UserRole.Customer)
-	@ApiBearerAuth('authenticationToken')
-	async create(@Body() createOrderDto: CreateOrderDto) {
-		return this.ordersService.create(createOrderDto);
-	}
+	// @Post()
+	// @UseGuards(JwtAuthGuard)
+	// @Roles(UserRole.Customer, UserRole.Admin)
+	// @ApiBearerAuth('authenticationToken')
+	// async create(@Body() createOrderDto: CreateOrderDto) {
+	// 	return this.ordersService.create(createOrderDto);
+	// }
 
 	@Get()
 	@UseGuards(JwtAuthGuard)

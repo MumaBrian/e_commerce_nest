@@ -20,57 +20,57 @@ export class OrdersService {
 		private customersRepository: Repository<Customer>,
 	) {}
 
-	async create(createOrderDto: CreateOrderDto) {
-		const { customerId, items, orderStatus, paymentMethod } =
-			createOrderDto;
+	// async create(createOrderDto: CreateOrderDto) {
+	// 	const { customerId, items, orderStatus, paymentMethod } =
+	// 		createOrderDto;
 
-		// Find the customer by ID
-		const customer = await this.customersRepository.findOne({
-			where: { id: customerId },
-		});
-		if (!customer) {
-			throw new NotFoundException('Customer not found');
-		}
+	// 	// Find the customer by ID
+	// 	const customer = await this.customersRepository.findOne({
+	// 		where: { id: customerId },
+	// 	});
+	// 	if (!customer) {
+	// 		throw new NotFoundException('Customer not found');
+	// 	}
 
-		// Initialize order items and calculate the total price
-		const orderItems: OrderItem[] = [];
-		let total = 0;
+	// 	// Initialize order items and calculate the total price
+	// 	const orderItems: OrderItem[] = [];
+	// 	let total = 0;
 
-		for (const item of items) {
-			// Find the product by ID
-			const product = await this.productsRepository.findOne({
-				where: { id: item.productId },
-			});
-			if (!product) {
-				throw new NotFoundException(
-					`Product with ID '${item.productId}' not found`,
-				);
-			}
+	// 	for (const item of items) {
+	// 		// Find the product by ID
+	// 		const product = await this.productsRepository.findOne({
+	// 			where: { id: item.productId },
+	// 		});
+	// 		if (!product) {
+	// 			throw new NotFoundException(
+	// 				`Product with ID '${item.productId}' not found`,
+	// 			);
+	// 		}
 
-			// Create an order item
-			const orderItem = new OrderItem();
-			orderItem.product = product;
-			orderItem.quantity = item.quantity;
-			orderItem.price = item.price;
+	// 		// Create an order item
+	// 		const orderItem = new OrderItem();
+	// 		orderItem.product = product;
+	// 		orderItem.quantity = item.quantity;
+	// 		orderItem.price = item.price;
 
-			// Add the order item to the list and update the total price
-			total += orderItem.price;
-			orderItems.push(orderItem);
-		}
+	// 		// Add the order item to the list and update the total price
+	// 		total += orderItem.price;
+	// 		orderItems.push(orderItem);
+	// 	}
 
-		// Create the order entity
-		const order = new Order();
-		order.customer = customer;
-		order.items = orderItems;
-		order.total = total;
-		order.status = orderStatus;
-		order.paymentMethod = paymentMethod;
+	// 	// Create the order entity
+	// 	const order = new Order();
+	// 	order.customer = customer;
+	// 	order.items = orderItems;
+	// 	order.total = total;
+	// 	order.status = orderStatus;
+	// 	order.paymentMethod = paymentMethod;
 
-		// Save the order to the database
-		await this.ordersRepository.save(order);
+	// 	// Save the order to the database
+	// 	await this.ordersRepository.save(order);
 
-		return order;
-	}
+	// 	return order;
+	// }
 
 	async findAll(): Promise<Order[]> {
 		return this.ordersRepository.find({

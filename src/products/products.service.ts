@@ -19,25 +19,25 @@ export class ProductsService {
 		private categoriesRepository: Repository<Category>,
 	) {}
 
-	// async create(createProductDto: CreateProductDto): Promise<Product> {
-	// 	const { category: categoryName, ...productData } = createProductDto;
+	async create(createProductDto: CreateProductDto): Promise<Product> {
+		const { category: categoryName, ...productData } = createProductDto;
 
-	// 	const category = await this.categoriesRepository.findOne({
-	// 		where: { name: categoryName },
-	// 	});
-	// 	if (!category) {
-	// 		throw new BadRequestException(
-	// 			`Category '${categoryName}' does not exist`,
-	// 		);
-	// 	}
+		const category = await this.categoriesRepository.findOne({
+			where: { name: categoryName },
+		});
+		if (!category) {
+			throw new BadRequestException(
+				`Category '${categoryName}' does not exist`,
+			);
+		}
 
-	// 	const product = this.productsRepository.create({
-	// 		...productData,
-	// 		category,
-	// 	});
+		const product = this.productsRepository.create({
+			...productData,
+			category,
+		});
 
-	// 	return this.productsRepository.save(product);
-	// }
+		return this.productsRepository.save(product);
+	}
 
 	async findAll(): Promise<Product[]> {
 		return this.productsRepository.find({ relations: ['category'] });
