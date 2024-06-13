@@ -9,7 +9,7 @@ import { Product } from '../database/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Category } from '../database/entities/category.entity';
-
+import { Image } from 'src/database/entities/image.entity';
 @Injectable()
 export class ProductsService {
 	constructor(
@@ -17,10 +17,16 @@ export class ProductsService {
 		private productsRepository: Repository<Product>,
 		@InjectRepository(Category)
 		private categoriesRepository: Repository<Category>,
+		@InjectRepository(Category)
+		private imagesRepository: Repository<Image>,
 	) {}
 
 	async create(createProductDto: CreateProductDto): Promise<Product> {
-		const { category: categoryName, ...productData } = createProductDto;
+		const {
+			category: categoryName,
+			images: imageUrls,
+			...productData
+		} = createProductDto;
 
 		const category = await this.categoriesRepository.findOne({
 			where: { name: categoryName },
@@ -31,9 +37,14 @@ export class ProductsService {
 			);
 		}
 
+		const images = imageUrls.map((url) =>
+			this.imagesRepository.create({ url }),
+		);
+
 		const product = this.productsRepository.create({
 			...productData,
 			category,
+			images,
 		});
 
 		return this.productsRepository.save(product);

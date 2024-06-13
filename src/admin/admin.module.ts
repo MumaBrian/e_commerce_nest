@@ -7,10 +7,10 @@ import { Category } from 'src/database/entities/category.entity';
 import { Warranty } from 'src/database/entities/warranty.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { User } from 'src/database/entities/user.entity';
-
+import { Image } from 'src/database/entities/image.entity';
 @Module({
 	imports: [
-		TypeOrmModule.forFeature([Category, Product, User, Warranty]),
+		TypeOrmModule.forFeature([Category, Product, User, Warranty, Image]),
 		AuthModule,
 	],
 	providers: [AdminService],

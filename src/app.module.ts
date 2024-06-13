@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 // import { SentryExceptionFilter } from './common/filters/sentry-exception.filter';
 import { OrdersModule } from './orders/orders.module';
 import { OrderitemsModule } from './orderitems/orderitems.module';
+import { ImagesModule } from './images/images.module';
 @Module({
 	imports: [
 		AppConfigModule,
@@ -24,6 +25,7 @@ import { OrderitemsModule } from './orderitems/orderitems.module';
 		AdminModule,
 		OrdersModule,
 		OrderitemsModule,
+		ImagesModule,
 	],
 	providers: [
 		{

@@ -9,7 +9,7 @@ import { Product } from '../database/entities/product.entity';
 import { Category } from '../database/entities/category.entity';
 import { User } from '../database/entities/user.entity';
 import { Warranty } from '../database/entities/warranty.entity';
-
+import { Image } from 'src/database/entities/image.entity';
 @Injectable()
 export class AdminService {
 	constructor(
@@ -21,36 +21,50 @@ export class AdminService {
 		private usersRepository: Repository<User>,
 		@InjectRepository(Warranty)
 		private warrantiesRepository: Repository<Warranty>,
+		@InjectRepository(Image)
+		private imagesRepository: Repository<Image>,
 	) {}
 
 	async manageProducts(productDetails: any) {
-		try {
-			const product = this.productsRepository.create(productDetails);
-			return await this.productsRepository.save(product);
-		} catch (error) {
-			throw new BadRequestException('Failed to create product');
+		const { images, ...productData } = productDetails;
+		const product = this.productsRepository.create(productData);
+
+		if (images && images.length > 0) {
+			product[0].images = await Promise.all(
+				images.map((url) => {
+					const image = this.imagesRepository.create({
+						url,
+						product: { id: product[0].id },
+					});
+					return this.imagesRepository.save(image);
+				}),
+			);
 		}
+
+		return this.productsRepository.save(product);
 	}
 
 	async updateProduct(id: string, productDetails: any) {
-		try {
-			const existingProduct = await this.productsRepository.findOne({
-				where: {
-					id,
-				},
-			});
-			if (!existingProduct) {
-				throw new NotFoundException(`Product with id ${id} not found`);
-			}
-			await this.productsRepository.update(id, productDetails);
-			return await this.productsRepository.findOne({
-				where: {
-					id,
-				},
-			});
-		} catch (error) {
-			throw new BadRequestException('Failed to update product');
+		const { images, ...productData } = productDetails;
+		const product = await this.productsRepository.findOne({
+			where: { id },
+			relations: ['images'],
+		});
+
+		if (images && images.length > 0) {
+			product.images = await Promise.all(
+				images.map((url) => {
+					const image = this.imagesRepository.create({
+						url,
+						product,
+					});
+					return this.imagesRepository.save(image);
+				}),
+			);
 		}
+
+		await this.productsRepository.update(id, productData);
+		return this.productsRepository.findOne({ where: { id } });
 	}
 
 	async deleteProduct(id: string) {

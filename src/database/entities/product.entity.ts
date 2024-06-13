@@ -30,7 +30,7 @@ export class Product {
 	@ManyToOne(() => Category, (category) => category.products)
 	category: Category;
 
-	@OneToMany(() => Image, (image) => image.product)
+	@OneToMany(() => Image, (image) => image.product, { cascade: true })
 	images: Image[];
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.product)
