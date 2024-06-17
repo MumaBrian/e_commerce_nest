@@ -21,7 +21,7 @@ export class Customer {
 	@Column()
 	address: string;
 
-	@OneToMany(() => Order, (order) => order.customer)
+	@OneToMany(() => Order, (order) => order.customer, { onDelete: 'CASCADE' })
 	orders: Order[];
 
 	@Column()

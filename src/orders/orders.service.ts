@@ -49,7 +49,7 @@ export class OrdersService {
 		const orderItems =
 			await this.orderItemsRepository.findByIds(orderItemsId);
 		if (orderItems.length !== orderItemsId.length) {
-			throw new NotFoundException('One or more order items not found');
+			throw new NotFoundException('No order item found');
 		}
 
 		const total = orderItems.reduce(

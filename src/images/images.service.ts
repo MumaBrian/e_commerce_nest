@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Image } from '../database/entities/image.entity';
 import { Product } from '../database/entities/product.entity';
+import { CreateImageDto } from './dto/create-image.dto';
 
 @Injectable()
 export class ImagesService {
@@ -17,22 +18,14 @@ export class ImagesService {
 		private productsRepository: Repository<Product>,
 	) {}
 
-	async create(url: string, productId: string) {
-		if (!url || !productId) {
+	async create(createImageDto: CreateImageDto) {
+		const { url } = createImageDto;
+
+		if (!url) {
 			throw new BadRequestException('URL and productId must be provided');
 		}
 
-		const product = await this.productsRepository.findOne({
-			where: { id: productId },
-		});
-
-		if (!product) {
-			throw new NotFoundException(
-				`Product with id ${productId} not found`,
-			);
-		}
-
-		const image = this.imagesRepository.create({ url, product });
+		const image = this.imagesRepository.create({ url });
 
 		try {
 			return await this.imagesRepository.save(image);

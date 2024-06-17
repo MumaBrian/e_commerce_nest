@@ -29,17 +29,17 @@ export class AdminService {
 		const { images, ...productData } = productDetails;
 		const product = this.productsRepository.create(productData);
 
-		if (images && images.length > 0) {
-			product[0].images = await Promise.all(
-				images.map((url) => {
-					const image = this.imagesRepository.create({
-						url,
-						product: { id: product[0].id },
-					});
-					return this.imagesRepository.save(image);
-				}),
-			);
-		}
+		// if (images && images.length > 0) {
+		// 	product.images = await Promise.all(
+		// 		images.map((url) => {
+		// 			const image = this.imagesRepository.create({
+		// 				url,
+		// 				product: { id: product[0].id },
+		// 			});
+		// 			return this.imagesRepository.save(image);
+		// 		}),
+		// 	);
+		// }
 
 		return this.productsRepository.save(product);
 	}
@@ -51,17 +51,17 @@ export class AdminService {
 			relations: ['images'],
 		});
 
-		if (images && images.length > 0) {
-			product.images = await Promise.all(
-				images.map((url) => {
-					const image = this.imagesRepository.create({
-						url,
-						product,
-					});
-					return this.imagesRepository.save(image);
-				}),
-			);
-		}
+		// if (images && images.length > 0) {
+		// 	product.images = await Promise.all(
+		// 		images.map((url) => {
+		// 			const image = this.imagesRepository.create({
+		// 				url,
+		// 				product,
+		// 			});
+		// 			return this.imagesRepository.save(image);
+		// 		}),
+		// 	);
+		// }
 
 		await this.productsRepository.update(id, productData);
 		return this.productsRepository.findOne({ where: { id } });

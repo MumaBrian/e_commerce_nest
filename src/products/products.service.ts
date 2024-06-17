@@ -10,6 +10,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Category } from '../database/entities/category.entity';
 import { Image } from 'src/database/entities/image.entity';
+
 @Injectable()
 export class ProductsService {
 	constructor(
@@ -17,34 +18,44 @@ export class ProductsService {
 		private productsRepository: Repository<Product>,
 		@InjectRepository(Category)
 		private categoriesRepository: Repository<Category>,
-		@InjectRepository(Category)
-		private imagesRepository: Repository<Image>,
+		@InjectRepository(Image)
+		private imageRepository: Repository<Image>,
 	) {}
+
+	private async findCategoryByName(name: string): Promise<Category> {
+		const category = await this.categoriesRepository.findOne({
+			where: { name },
+		});
+		if (!category) {
+			throw new BadRequestException(`Category '${name}' does not exist`);
+		}
+		return category;
+	}
+
+	private async findImageById(id: string): Promise<Image> {
+		const image = await this.imageRepository.findOne({ where: { id } });
+		if (!image) {
+			throw new BadRequestException(
+				`Image with ID '${id}' does not exist`,
+			);
+		}
+		return image;
+	}
 
 	async create(createProductDto: CreateProductDto): Promise<Product> {
 		const {
 			category: categoryName,
-			images: imageUrls,
+			imageId,
 			...productData
 		} = createProductDto;
 
-		const category = await this.categoriesRepository.findOne({
-			where: { name: categoryName },
-		});
-		if (!category) {
-			throw new BadRequestException(
-				`Category '${categoryName}' does not exist`,
-			);
-		}
-
-		const images = imageUrls.map((url) =>
-			this.imagesRepository.create({ url }),
-		);
+		const category = await this.findCategoryByName(categoryName);
+		const image = await this.findImageById(imageId);
 
 		const product = this.productsRepository.create({
 			...productData,
 			category,
-			images,
+			images: [image],
 		});
 
 		return this.productsRepository.save(product);
@@ -59,11 +70,9 @@ export class ProductsService {
 			where: { id },
 			relations: ['category'],
 		});
-
 		if (!product) {
 			throw new NotFoundException(`Product with ID '${id}' not found`);
 		}
-
 		return product;
 	}
 
@@ -82,14 +91,7 @@ export class ProductsService {
 
 		let category: Category | undefined;
 		if (categoryName) {
-			category = await this.categoriesRepository.findOne({
-				where: { name: categoryName },
-			});
-			if (!category) {
-				throw new BadRequestException(
-					`Category '${categoryName}' does not exist`,
-				);
-			}
+			category = await this.findCategoryByName(categoryName);
 		}
 
 		await this.productsRepository.update(id, {
@@ -111,7 +113,7 @@ export class ProductsService {
 			throw new NotFoundException(`Product with ID '${id}' not found`);
 		}
 
-		await this.productsRepository.delete(id);
+		await this.productsRepository.remove(existingProduct);
 		return { message: `Product with ID '${id}' deleted successfully` };
 	}
 }
