@@ -2,9 +2,10 @@ import {
 	Injectable,
 	NotFoundException,
 	BadRequestException,
+	InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, getManager } from 'typeorm';
 import { Product } from '../database/entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -43,37 +44,59 @@ export class ProductsService {
 	}
 
 	async create(createProductDto: CreateProductDto): Promise<Product> {
-		const {
-			category: categoryName,
-			imageId,
-			...productData
-		} = createProductDto;
+		try {
+			const {
+				category: categoryName,
+				imageId,
+				...productData
+			} = createProductDto;
 
-		const category = await this.findCategoryByName(categoryName);
-		const image = await this.findImageById(imageId);
+			const category = await this.findCategoryByName(categoryName);
+			const image = await this.findImageById(imageId);
 
-		const product = this.productsRepository.create({
-			...productData,
-			category,
-			images: [image],
-		});
+			const product = this.productsRepository.create({
+				...productData,
+				category,
+				images: [image],
+			});
 
-		return this.productsRepository.save(product);
+			return await this.productsRepository.save(product);
+		} catch (error) {
+			if (error instanceof BadRequestException) {
+				throw error;
+			}
+			throw new InternalServerErrorException('Error creating product');
+		}
 	}
 
 	async findAll(): Promise<Product[]> {
-		return this.productsRepository.find({ relations: ['category'] });
+		try {
+			return await this.productsRepository.find({
+				relations: ['category'],
+			});
+		} catch (error) {
+			throw new InternalServerErrorException('Failed to fetch products');
+		}
 	}
 
 	async findOne(id: string): Promise<Product> {
-		const product = await this.productsRepository.findOne({
-			where: { id },
-			relations: ['category'],
-		});
-		if (!product) {
-			throw new NotFoundException(`Product with ID '${id}' not found`);
+		try {
+			const product = await this.productsRepository.findOne({
+				where: { id },
+				relations: ['category'],
+			});
+			if (!product) {
+				throw new NotFoundException(
+					`Product with ID '${id}' not found`,
+				);
+			}
+			return product;
+		} catch (error) {
+			if (error instanceof NotFoundException) {
+				throw error;
+			}
+			throw new InternalServerErrorException('Failed to fetch product');
 		}
-		return product;
 	}
 
 	async update(
@@ -82,38 +105,75 @@ export class ProductsService {
 	): Promise<Product> {
 		const { category: categoryName, ...productData } = updateProductDto;
 
-		const existingProduct = await this.productsRepository.findOne({
-			where: { id },
-		});
-		if (!existingProduct) {
-			throw new NotFoundException(`Product with ID '${id}' not found`);
-		}
-
 		let category: Category | undefined;
 		if (categoryName) {
 			category = await this.findCategoryByName(categoryName);
 		}
 
-		await this.productsRepository.update(id, {
-			...productData,
-			category,
-		});
+		const entityManager = getManager();
+		try {
+			const updatedProduct = await entityManager.transaction(
+				async (transactionalEntityManager) => {
+					const existingProduct =
+						await transactionalEntityManager.findOne(Product, {
+							where: { id },
+						});
+					if (!existingProduct) {
+						throw new NotFoundException(
+							`Product with ID '${id}' not found`,
+						);
+					}
 
-		return this.productsRepository.findOne({
-			where: { id },
-			relations: ['category'],
-		});
+					await transactionalEntityManager.update(Product, id, {
+						...productData,
+						category,
+					});
+
+					const updatedProduct =
+						await transactionalEntityManager.findOne(Product, {
+							where: { id },
+							relations: ['category'],
+						});
+					if (!updatedProduct) {
+						throw new InternalServerErrorException(
+							`Product with ID '${id}' not found after update`,
+						);
+					}
+
+					return updatedProduct; // Ensure to return the updated product
+				},
+			);
+
+			return updatedProduct; // Return the result of the transaction
+		} catch (error) {
+			if (
+				error instanceof NotFoundException ||
+				error instanceof InternalServerErrorException
+			) {
+				throw error;
+			}
+			throw new InternalServerErrorException('Error updating product');
+		}
 	}
 
 	async remove(id: string): Promise<{ message: string }> {
-		const existingProduct = await this.productsRepository.findOne({
-			where: { id },
-		});
-		if (!existingProduct) {
-			throw new NotFoundException(`Product with ID '${id}' not found`);
-		}
+		try {
+			const existingProduct = await this.productsRepository.findOne({
+				where: { id },
+			});
+			if (!existingProduct) {
+				throw new NotFoundException(
+					`Product with ID '${id}' not found`,
+				);
+			}
 
-		await this.productsRepository.remove(existingProduct);
-		return { message: `Product with ID '${id}' deleted successfully` };
+			await this.productsRepository.remove(existingProduct);
+			return { message: `Product with ID '${id}' deleted successfully` };
+		} catch (error) {
+			if (error instanceof NotFoundException) {
+				throw error;
+			}
+			throw new InternalServerErrorException('Error deleting product');
+		}
 	}
 }

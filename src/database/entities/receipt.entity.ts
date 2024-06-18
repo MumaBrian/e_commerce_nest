@@ -13,7 +13,7 @@ export class Receipt {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@ManyToOne(() => Order, (order) => order.OrderItems)
+	@ManyToOne(() => Order, (order) => order.orderItems)
 	order: Order;
 
 	@ManyToOne(() => Payment, (payment) => payment.receipts)

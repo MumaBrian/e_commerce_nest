@@ -1,8 +1,8 @@
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
-export class UpdateImageDto {
+export class CreatePaymentDto {
 	@IsString()
 	@IsNotEmpty()
 	@IsOptional()
-	url: string;
+	orderId?: string;
 }

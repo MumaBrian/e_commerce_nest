@@ -13,6 +13,7 @@ import { AdminModule } from './admin/admin.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderitemsModule } from './orderitems/orderitems.module';
 import { ImagesModule } from './images/images.module';
+import { PaymentsModule } from './payments/payments.module';
 @Module({
 	imports: [
 		AppConfigModule,
@@ -26,6 +27,7 @@ import { ImagesModule } from './images/images.module';
 		OrdersModule,
 		OrderitemsModule,
 		ImagesModule,
+		PaymentsModule,
 	],
 	providers: [
 		{

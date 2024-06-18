@@ -7,7 +7,7 @@ export class OrderItem {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@ManyToOne(() => Order, (order) => order.OrderItems)
+	@ManyToOne(() => Order, (order) => order.orderItems)
 	order: Order;
 
 	@ManyToOne(() => Product, (product) => product.orderItems, {

@@ -4,6 +4,7 @@ import {
 	ConflictException,
 	InternalServerErrorException,
 	BadRequestException,
+	Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,8 +14,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from 'src/database/enums/user-role.enum';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+
 @Injectable()
 export class UsersService {
+	private readonly logger = new Logger(UsersService.name);
+
 	constructor(
 		@InjectRepository(User)
 		private usersRepository: Repository<User>,
@@ -31,10 +35,21 @@ export class UsersService {
 				);
 			}
 
-			const user = this.usersRepository.create(createUserDto);
+			const hashedPassword = await bcrypt.hash(
+				createUserDto.password,
+				10,
+			);
+			const user = this.usersRepository.create({
+				...createUserDto,
+				password: hashedPassword,
+			});
+
 			return await this.usersRepository.save(user);
 		} catch (error) {
-			console.error('Error creating user:', error.message);
+			this.logger.error('Error creating user:', error.message);
+			if (error instanceof ConflictException) {
+				throw error;
+			}
 			throw new InternalServerErrorException('Error creating user');
 		}
 	}
@@ -46,6 +61,7 @@ export class UsersService {
 	async findOne(id: string): Promise<User> {
 		const user = await this.usersRepository.findOne({ where: { id } });
 		if (!user) {
+			this.logger.warn(`User with ID ${id} not found`);
 			throw new NotFoundException(`User with ID ${id} not found`);
 		}
 		return user;
@@ -54,43 +70,58 @@ export class UsersService {
 	async findByEmail(email: string): Promise<User> {
 		const user = await this.usersRepository.findOne({ where: { email } });
 		if (!user) {
+			this.logger.warn(`User with email ${email} not found`);
 			throw new NotFoundException(`User with email ${email} not found`);
 		}
 		return user;
 	}
 
 	async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-		const updateResult = await this.usersRepository.update(
-			id,
-			updateUserDto,
-		);
-		if (updateResult.affected === 0) {
-			throw new NotFoundException(`User with ID ${id} not found`);
-		}
-
-		const updatedUser = await this.usersRepository.findOne({
-			where: { id },
-		});
-		if (!updatedUser) {
-			throw new InternalServerErrorException(
-				`User with ID ${id} not found after update`,
+		try {
+			const updateResult = await this.usersRepository.update(
+				id,
+				updateUserDto,
 			);
-		}
+			if (updateResult.affected === 0) {
+				this.logger.warn(`User with ID ${id} not found`);
+				throw new NotFoundException(`User with ID ${id} not found`);
+			}
 
-		return updatedUser;
+			const updatedUser = await this.usersRepository.findOne({
+				where: { id },
+			});
+			if (!updatedUser) {
+				this.logger.error(`User with ID ${id} not found after update`);
+				throw new InternalServerErrorException(
+					`User with ID ${id} not found after update`,
+				);
+			}
+
+			return updatedUser;
+		} catch (error) {
+			this.logger.error('Error updating user:', error.message);
+			throw new InternalServerErrorException('Error updating user');
+		}
 	}
 
 	async remove(id: string): Promise<void> {
-		const user = await this.usersRepository.findOne({ where: { id } });
-		if (!user) {
-			throw new NotFoundException(`User with ID ${id} not found`);
-		}
+		try {
+			const user = await this.usersRepository.findOne({ where: { id } });
+			if (!user) {
+				this.logger.warn(`User with ID ${id} not found`);
+				throw new NotFoundException(`User with ID ${id} not found`);
+			}
 
-		const deleteResult = await this.usersRepository.delete(id);
-		if (deleteResult.affected === 0) {
-			throw new InternalServerErrorException(
-				`Failed to delete User with ID ${id}`,
-			);
+			const deleteResult = await this.usersRepository.delete(id);
+			if (deleteResult.affected === 0) {
+				this.logger.error(`Failed to delete User with ID ${id}`);
+				throw new InternalServerErrorException(
+					`Failed to delete User with ID ${id}`,
+				);
+			}
+		} catch (error) {
+			this.logger.error('Error deleting user:', error.message);
+			throw new InternalServerErrorException('Error deleting user');
 		}
 	}
 
@@ -98,18 +129,22 @@ export class UsersService {
 		id: string,
 		updateUserDto: UpdateUserDto,
 	): Promise<User> {
-		const user = await this.usersRepository.findOne({
-			where: { id },
-		});
-		if (!user) {
-			throw new NotFoundException('User not found');
+		try {
+			const user = await this.usersRepository.findOne({ where: { id } });
+			if (!user) {
+				this.logger.warn('User not found');
+				throw new NotFoundException('User not found');
+			}
+
+			await this.usersRepository.update(id, updateUserDto);
+			const updatedUser = await this.usersRepository.findOne({
+				where: { id },
+			});
+			return updatedUser;
+		} catch (error) {
+			this.logger.error('Error updating profile:', error.message);
+			throw new InternalServerErrorException('Error updating profile');
 		}
-
-		await this.usersRepository.update(id, updateUserDto);
-
-		return this.usersRepository.findOne({
-			where: { id },
-		});
 	}
 
 	async updatePassword(
@@ -117,29 +152,41 @@ export class UsersService {
 		updatePasswordDto: UpdatePasswordDto,
 	): Promise<void> {
 		const { currentPassword, newPassword } = updatePasswordDto;
-		const user = await this.usersRepository.findOne({ where: { id } });
+		try {
+			const user = await this.usersRepository.findOne({ where: { id } });
 
-		if (!user) {
-			throw new NotFoundException('User not found');
+			if (!user) {
+				this.logger.warn('User not found');
+				throw new NotFoundException('User not found');
+			}
+
+			const isPasswordValid = await bcrypt.compare(
+				currentPassword,
+				user.password,
+			);
+			if (!isPasswordValid) {
+				this.logger.warn('Current password is incorrect');
+				throw new BadRequestException('Current password is incorrect');
+			}
+
+			const hashedPassword = await bcrypt.hash(newPassword, 10);
+			user.password = hashedPassword;
+
+			await this.usersRepository.save(user);
+		} catch (error) {
+			this.logger.error('Error updating password:', error.message);
+			throw new InternalServerErrorException('Error updating password');
 		}
-
-		const isPasswordValid = await bcrypt.compare(
-			currentPassword,
-			user.password,
-		);
-		if (!isPasswordValid) {
-			throw new BadRequestException('Current password is incorrect');
-		}
-
-		const hashedPassword = await bcrypt.hash(newPassword, 10);
-		user.password = hashedPassword;
-
-		await this.usersRepository.save(user);
 	}
 
 	async findAdmin(): Promise<User | null> {
-		return await this.usersRepository.findOne({
-			where: { roles: UserRole.Admin },
-		});
+		try {
+			return await this.usersRepository.findOne({
+				where: { roles: UserRole.Admin },
+			});
+		} catch (error) {
+			this.logger.error('Error finding admin:', error.message);
+			throw new InternalServerErrorException('Error finding admin');
+		}
 	}
 }
