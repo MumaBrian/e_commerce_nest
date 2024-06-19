@@ -50,7 +50,7 @@ export class CustomerService {
 				throw new NotFoundException(`Customer with ID ${id} not found`);
 			}
 
-			return customer;
+			return this.customersRepository.save(customer);
 		} catch (error) {
 			throw new BadRequestException(
 				`Failed to fetch customer with ID ${id}`,
@@ -71,6 +71,7 @@ export class CustomerService {
 
 			return this.findOne(id);
 		} catch (error) {
+			console.error({ error });
 			throw new BadRequestException(
 				`Failed to update customer with ID ${id}`,
 			);
@@ -85,6 +86,7 @@ export class CustomerService {
 				throw new NotFoundException(`Customer with ID ${id} not found`);
 			}
 		} catch (error) {
+			console.error({ error });
 			throw new BadRequestException(
 				`Failed to delete customer with ID ${id}`,
 			);

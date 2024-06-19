@@ -23,7 +23,8 @@ export class CustomerController {
 
 	@Post()
 	@UseGuards(JwtAuthGuard)
-	@Roles(UserRole.Customer)
+	@ApiBearerAuth('authenticationToken')
+	@Roles(UserRole.Customer, UserRole.Admin)
 	async create(@Body() createCustomerDto: CreateCustomerDto) {
 		return await this.customerService.create(createCustomerDto);
 	}

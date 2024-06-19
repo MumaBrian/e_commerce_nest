@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderItem } from '../database/entities/order-item.entity';
@@ -25,19 +25,33 @@ export class OrderItemService {
 			where: { id: productId },
 		});
 
+		console.log({ product });
 		if (!product) {
-			throw new Error('Product not found');
+			throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+		}
+
+		if (quantity > product.stock) {
+			throw new HttpException(
+				'Insufficient stock',
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+
+		if (Number(price) !== Number(product.price)) {
+			throw new HttpException(
+				'Price mismatch, enter the right price from the product',
+				HttpStatus.BAD_REQUEST,
+			);
 		}
 
 		const orderItem = this.orderItemsRepository.create({
 			product,
 			quantity,
-			price,
+			price: Number(product.price), // Ensure the price matches the product's price
 		});
 
+		console.log({ orderItem });
 		await this.orderItemsRepository.save(orderItem);
-
-		// Update order total
 
 		return orderItem;
 	}
@@ -96,5 +110,22 @@ export class OrderItemService {
 		await this.ordersRepository.save(order);
 
 		return orderItem;
+	}
+
+	async getItem(id: string) {
+		const orderItem = await this.orderItemsRepository.findOne({
+			where: { id },
+			relations: ['product', 'order'],
+		});
+		if (!orderItem) {
+			throw new Error('Order item not found');
+		}
+		return orderItem;
+	}
+
+	async getAllItems() {
+		return await this.orderItemsRepository.find({
+			relations: ['product', 'order'],
+		});
 	}
 }

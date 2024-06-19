@@ -6,6 +6,7 @@ import {
 	Patch,
 	Delete,
 	UseGuards,
+	Get,
 } from '@nestjs/common';
 import { OrderItemService } from './orderitems.service';
 import { CreateOrderItemDto } from './dto/create-order-item.dto';
@@ -29,6 +30,16 @@ export class OrderItemController {
 		@Body() createOrderItemDto: CreateOrderItemDto,
 	) {
 		return this.orderItemService.addItem(productId, createOrderItemDto);
+	}
+
+	@Get(':id')
+	async getItem(@Param('id') id: string) {
+		return await this.orderItemService.getItem(id);
+	}
+
+	@Get()
+	async getAllItems() {
+		return await this.orderItemService.getAllItems();
 	}
 
 	@Patch(':id')
