@@ -4,6 +4,7 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from 'src/database/enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
@@ -20,13 +21,16 @@ export class AuthService {
 				HttpStatus.UNAUTHORIZED,
 			);
 		}
+
 		const isPasswordValid = await bcrypt.compare(pass, user.password);
+
 		if (!isPasswordValid) {
 			throw new HttpException(
 				'Invalid credentials',
 				HttpStatus.UNAUTHORIZED,
 			);
 		}
+
 		const { password, ...result } = user;
 		return result;
 	}
@@ -52,9 +56,22 @@ export class AuthService {
 
 	async register(registerDto: RegisterDto) {
 		try {
-			const existingUser = await this.usersService.findByEmail(
-				registerDto.email,
-			);
+			let existingUser;
+			try {
+				existingUser = await this.usersService.findByEmail(
+					registerDto.email,
+				);
+			} catch (error) {
+				if (
+					error instanceof HttpException &&
+					error.getStatus() === HttpStatus.NOT_FOUND
+				) {
+					existingUser = null;
+				} else {
+					throw error;
+				}
+			}
+
 			if (existingUser) {
 				throw new HttpException(
 					'User already exists',
@@ -62,11 +79,23 @@ export class AuthService {
 				);
 			}
 
+			if (registerDto.role === UserRole.Admin) {
+				const existingAdmin = await this.usersService.findAdmin();
+				if (existingAdmin) {
+					throw new HttpException(
+						{
+							status: HttpStatus.FORBIDDEN,
+							error: 'Change user role to Customer',
+							message: 'Change user role to Customer',
+						},
+						HttpStatus.FORBIDDEN,
+					);
+				}
+			}
+
 			return await this.usersService.create(registerDto);
 		} catch (error) {
-			if (error instanceof HttpException) {
-				throw error;
-			}
+			console.error('Registration error:', error.message);
 			throw new HttpException(
 				'Registration failed',
 				HttpStatus.BAD_REQUEST,

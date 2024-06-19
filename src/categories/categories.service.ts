@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+	Injectable,
+	NotFoundException,
+	ConflictException,
+	InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from '../database/entities/category.entity';
@@ -12,28 +17,101 @@ export class CategoriesService {
 		private categoriesRepository: Repository<Category>,
 	) {}
 
-	create(createCategoryDto: CreateCategoryDto) {
-		const category = this.categoriesRepository.create(createCategoryDto);
-		return this.categoriesRepository.save(category);
+	async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+		try {
+			const existingCategory = await this.categoriesRepository.findOne({
+				where: { name: createCategoryDto.name },
+			});
+			if (existingCategory) {
+				throw new ConflictException(
+					`Category with name ${createCategoryDto.name} already exists`,
+				);
+			}
+
+			const category =
+				this.categoriesRepository.create(createCategoryDto);
+			return await this.categoriesRepository.save(category);
+		} catch (error) {
+			throw new InternalServerErrorException(
+				'Error creating category',
+				error.message,
+			);
+		}
 	}
 
-	findAll() {
-		return this.categoriesRepository.find();
+	async findAll(): Promise<Category[]> {
+		try {
+			return await this.categoriesRepository.find();
+		} catch (error) {
+			throw new InternalServerErrorException(
+				'Error finding categories:',
+				error.message,
+			);
+		}
 	}
 
-	findOne(id: string) {
-		return this.categoriesRepository.findOne({
-			where: {
-				id,
-			},
-		});
+	async findOne(id: string): Promise<Category> {
+		try {
+			const category = await this.categoriesRepository.findOne({
+				where: { id },
+			});
+			if (!category) {
+				throw new NotFoundException(`Category with ID ${id} not found`);
+			}
+			return category;
+		} catch (error) {
+			console.error(
+				`Error finding category with ID ${id}:`,
+				error.message,
+			);
+			throw new InternalServerErrorException('Error finding category');
+		}
 	}
 
-	update(id: string, updateCategoryDto: UpdateCategoryDto) {
-		return this.categoriesRepository.update(id, updateCategoryDto);
+	async update(
+		id: string,
+		updateCategoryDto: UpdateCategoryDto,
+	): Promise<Category> {
+		try {
+			const category = await this.categoriesRepository.findOne({
+				where: { id },
+			});
+			if (!category) {
+				throw new NotFoundException(`Category with ID ${id} not found`);
+			}
+
+			await this.categoriesRepository.update(id, updateCategoryDto);
+			return this.categoriesRepository.findOne({ where: { id } });
+		} catch (error) {
+			console.error(
+				`Error updating category with ID ${id}:`,
+				error.message,
+			);
+			throw new InternalServerErrorException('Error updating category');
+		}
 	}
 
-	remove(id: string) {
-		return this.categoriesRepository.delete(id);
+	async remove(id: string): Promise<void> {
+		try {
+			const category = await this.categoriesRepository.findOne({
+				where: { id },
+			});
+			if (!category) {
+				throw new NotFoundException(`Category with ID ${id} not found`);
+			}
+
+			const deleteResult = await this.categoriesRepository.delete(id);
+			if (deleteResult.affected === 0) {
+				throw new InternalServerErrorException(
+					`Failed to delete category with ID ${id}`,
+				);
+			}
+		} catch (error) {
+			console.error(
+				`Error deleting category with ID ${id}:`,
+				error.message,
+			);
+			throw new InternalServerErrorException('Error deleting category');
+		}
 	}
 }

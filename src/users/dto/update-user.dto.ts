@@ -1,4 +1,5 @@
-import { IsString, IsEmail, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
+import { UserRole } from 'src/database/enums/user-role.enum';
 
 export class UpdateUserDto {
 	@IsString()
@@ -11,5 +12,6 @@ export class UpdateUserDto {
 
 	@IsString()
 	@IsOptional()
-	password?: string;
+	@IsEnum(UserRole)
+	role?: UserRole;
 }

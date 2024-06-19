@@ -1,15 +1,11 @@
-import { IsString, IsEmail, IsNotEmpty } from 'class-validator';
-
-export enum Status {
-	PENDING = 'pending',
-	ACTIVE = 'active',
-}
-
-export enum UserRole {
-	USER = 'user',
-	ADMIN = 'admin',
-}
-
+import {
+	IsString,
+	IsEmail,
+	IsNotEmpty,
+	IsEnum,
+	IsStrongPassword,
+} from 'class-validator';
+import { UserRole } from 'src/database/enums/user-role.enum';
 export class RegisterDto {
 	@IsString()
 	@IsNotEmpty()
@@ -19,7 +15,9 @@ export class RegisterDto {
 	@IsNotEmpty()
 	email: string;
 
-	@IsString()
-	@IsNotEmpty()
+	@IsStrongPassword()
 	password: string;
+
+	@IsEnum(UserRole)
+	role: UserRole;
 }

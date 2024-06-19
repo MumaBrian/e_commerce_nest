@@ -19,5 +19,9 @@ export class CreateProductDto {
 
 	@IsString()
 	@IsNotEmpty()
+	imageId: string;
+
+	@IsString()
+	@IsNotEmpty()
 	category: string;
 }
