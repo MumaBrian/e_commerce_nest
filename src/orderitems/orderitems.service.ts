@@ -25,7 +25,6 @@ export class OrderItemService {
 			where: { id: productId },
 		});
 
-		console.log({ product });
 		if (!product) {
 			throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
 		}
@@ -47,10 +46,9 @@ export class OrderItemService {
 		const orderItem = this.orderItemsRepository.create({
 			product,
 			quantity,
-			price: Number(product.price), // Ensure the price matches the product's price
+			price: Number(product.price),
 		});
 
-		console.log({ orderItem });
 		await this.orderItemsRepository.save(orderItem);
 
 		return orderItem;
