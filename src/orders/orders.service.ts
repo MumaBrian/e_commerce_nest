@@ -64,7 +64,7 @@ export class OrdersService {
 				status: orderStatus,
 				paymentMethod,
 			});
-
+			console.log({ order });
 			await this.ordersRepository.save(order);
 			return order;
 		} catch (error) {

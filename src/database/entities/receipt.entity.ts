@@ -2,16 +2,20 @@ import {
 	Entity,
 	PrimaryGeneratedColumn,
 	ManyToOne,
-	OneToMany,
+	// OneToMany,
 	Column,
 } from 'typeorm';
 import { Order } from './order.entity';
 import { Payment } from './payment.entity';
-import { Warranty } from './warranty.entity';
+// import { Warranty } from './warranty.entity';
+
 @Entity()
 export class Receipt {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
+
+	@Column()
+	name: string;
 
 	@ManyToOne(() => Order, (order) => order.orderItems)
 	order: Order;
@@ -25,9 +29,6 @@ export class Receipt {
 	@Column('decimal')
 	totalAmount: number;
 
-	@Column('json')
-	items: any;
-
-	@OneToMany(() => Warranty, (warranty) => warranty.product)
-	warranties: Warranty[];
+	@Column('json', { nullable: true })
+	warrantyInfo: { product: string; warrantyPeriod: string }[];
 }

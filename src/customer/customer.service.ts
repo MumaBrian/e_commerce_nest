@@ -10,22 +10,51 @@ import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Product } from '../database/entities/product.entity';
 import { Order } from '../database/entities/order.entity';
+import { User } from 'src/database/entities/user.entity';
 
 @Injectable()
 export class CustomerService {
 	constructor(
 		@InjectRepository(Customer)
 		private customersRepository: Repository<Customer>,
+		@InjectRepository(User)
+		private usersRepository: Repository<User>,
 		@InjectRepository(Product)
 		private productsRepository: Repository<Product>,
 		@InjectRepository(Order)
 		private ordersRepository: Repository<Order>,
 	) {}
 
-	async create(createCustomerDto: CreateCustomerDto) {
+	async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
+		const { userId } = createCustomerDto;
+
+		const existingCustomer = await this.customersRepository.findOne({
+			where: { user: { id: userId } },
+			relations: ['user'],
+		});
+
+		if (existingCustomer) {
+			throw new BadRequestException(
+				`Customer with userId ${userId} already exists`,
+			);
+		}
+
 		try {
-			const customer = this.customersRepository.create(createCustomerDto);
-			return await this.customersRepository.save(customer);
+			const user = await this.usersRepository.findOne({
+				where: { id: userId },
+			});
+			if (!user) {
+				throw new BadRequestException('Failed to create customer');
+			}
+
+			const newCustomer = this.customersRepository.create({
+				user,
+				...createCustomerDto,
+			});
+
+			const savedCustomer =
+				await this.customersRepository.save(newCustomer);
+			return savedCustomer;
 		} catch (error) {
 			throw new BadRequestException('Failed to create customer');
 		}
