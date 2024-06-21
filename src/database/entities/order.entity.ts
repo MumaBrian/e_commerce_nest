@@ -10,6 +10,7 @@ import { OrderStatus } from '../enums/order-status.enum';
 import { PaymentMethod } from '../enums/payment-method.enum';
 import { Customer } from './customer.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { Receipt } from './receipt.entity';
 
 @Entity()
 export class Order {
@@ -23,11 +24,17 @@ export class Order {
 
 	@OneToMany(() => OrderItem, (orderItem) => orderItem.order, {
 		cascade: true,
+		eager: true,
 	})
 	orderItems: OrderItem[];
 
 	@Column('decimal')
 	total: number;
+
+	@ManyToOne(() => Receipt, (receipt) => receipt.order, {
+		cascade: true,
+	})
+	receipt: Receipt;
 
 	@ApiProperty({
 		description: 'Status of the order',

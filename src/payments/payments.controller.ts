@@ -15,23 +15,23 @@ export class PaymentsController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	create(@Body() createPaymentDto: CreatePaymentDto) {
-		return this.paymentsService.create(createPaymentDto);
+	async create(@Body() createPaymentDto: CreatePaymentDto) {
+		return await this.paymentsService.create(createPaymentDto);
 	}
 
 	@Get()
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	findAll() {
-		return this.paymentsService.findAll();
+	async findAll() {
+		return await this.paymentsService.findAll();
 	}
 
 	@Get(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	findOne(@Param('id') id: string) {
-		return this.paymentsService.findOne(id);
+	async findOne(@Param('id') id: string) {
+		return await this.paymentsService.findOne(id);
 	}
 }

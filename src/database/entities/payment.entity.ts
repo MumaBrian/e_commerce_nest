@@ -5,7 +5,7 @@ import {
 	Column,
 	OneToMany,
 } from 'typeorm';
-import { OrderItem } from './order-item.entity';
+import { Order } from './order.entity';
 import { Receipt } from './receipt.entity';
 
 @Entity()
@@ -13,8 +13,8 @@ export class Payment {
 	@PrimaryGeneratedColumn('uuid')
 	id: string;
 
-	@ManyToOne(() => OrderItem, (orderItem) => orderItem.order)
-	order: OrderItem;
+	@ManyToOne(() => Order, (order) => order.orderItems)
+	order: Order;
 
 	@Column('decimal')
 	amount: number;

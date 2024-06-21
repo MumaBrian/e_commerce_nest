@@ -14,6 +14,8 @@ import { OrdersModule } from './orders/orders.module';
 import { OrderitemsModule } from './orderitems/orderitems.module';
 import { ImagesModule } from './images/images.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ReceiptsModule } from './receipts/receipts.module';
+import { WarrantiesModule } from './warranties/warranties.module';
 @Module({
 	imports: [
 		AppConfigModule,
@@ -28,6 +30,8 @@ import { PaymentsModule } from './payments/payments.module';
 		OrderitemsModule,
 		ImagesModule,
 		PaymentsModule,
+		ReceiptsModule,
+		WarrantiesModule,
 	],
 	providers: [
 		{
