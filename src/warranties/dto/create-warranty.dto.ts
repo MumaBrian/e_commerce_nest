@@ -11,9 +11,5 @@ export class CreateWarrantyDto {
 
 	@IsDateString()
 	@IsNotEmpty()
-	startDate: Date;
-
-	@IsDateString()
-	@IsNotEmpty()
-	endDate: Date;
+	startDate: string;
 }

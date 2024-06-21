@@ -91,6 +91,12 @@ export class ReceiptsService {
 		return pdfPath;
 	}
 
+	async getAllReceipts() {
+		return this.receiptsRepository.find({
+			relations: ['order', 'payment'],
+		});
+	}
+
 	private async generatePdf(receipt: Receipt, pdfPath: string) {
 		const doc = new PDFDocument();
 		doc.pipe(fs.createWriteStream(pdfPath));

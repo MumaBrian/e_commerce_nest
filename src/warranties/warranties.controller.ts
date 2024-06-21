@@ -16,23 +16,23 @@ export class WarrantiesController {
 	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	create(@Body() createWarrantyDto: CreateWarrantyDto) {
-		return this.warrantiesService.create(createWarrantyDto);
+	async create(@Body() createWarrantyDto: CreateWarrantyDto) {
+		return await this.warrantiesService.create(createWarrantyDto);
 	}
 
 	@Post('validate/:productId')
 	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	validateWarranty(@Param('productId') productId: string) {
-		return this.warrantiesService.validateWarranty(productId);
+	async validateWarranty(@Param('productId') productId: string) {
+		return await this.warrantiesService.validateWarranty(productId);
 	}
 
 	@Post('claim/:productId')
 	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	claimWarranty(@Param('productId') productId: string) {
-		return this.warrantiesService.claimWarranty(productId);
+	async claimWarranty(@Param('productId') productId: string) {
+		return await this.warrantiesService.claimWarranty(productId);
 	}
 }

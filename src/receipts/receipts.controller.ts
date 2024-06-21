@@ -15,6 +15,7 @@ import { Response } from 'express';
 import * as fs from 'fs';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateReceiptsDto } from './dto/create-receipts.dto'; // Import the DTO
+import { SelfGuard } from 'src/common/guards/self.guard';
 
 @ApiTags('receipts')
 @Controller('receipts')
@@ -26,16 +27,16 @@ export class ReceiptsController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin, UserRole.Customer)
 	@ApiBearerAuth('authenticationToken')
-	generateReceipt(@Body() createReceiptsDto: CreateReceiptsDto) {
-		return this.receiptsService.generateReceipt(createReceiptsDto);
+	async generateReceipt(@Body() createReceiptsDto: CreateReceiptsDto) {
+		return await this.receiptsService.generateReceipt(createReceiptsDto);
 	}
 
 	@Get(':id')
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin, UserRole.Customer)
 	@ApiBearerAuth('authenticationToken')
-	viewReceipt(@Param('id') id: string) {
-		return this.receiptsService.viewReceipt(id);
+	async viewReceipt(@Param('id') id: string) {
+		return await this.receiptsService.viewReceipt(id);
 	}
 
 	@Get(':id/download')
@@ -49,5 +50,13 @@ export class ReceiptsController {
 		} else {
 			res.status(404).send('Receipt not found');
 		}
+	}
+
+	@Get()
+	@UseGuards(JwtAuthGuard, SelfGuard)
+	@Roles(UserRole.Customer, UserRole.Admin)
+	@ApiBearerAuth('authenticationToken')
+	async getAllReceipts() {
+		return this.receiptsService.getAllReceipts();
 	}
 }

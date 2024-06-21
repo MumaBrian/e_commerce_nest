@@ -11,9 +11,5 @@ export class UpdateWarrantyDto {
 
 	@IsDateString()
 	@IsOptional()
-	startDate?: Date;
-
-	@IsDateString()
-	@IsOptional()
-	endDate?: Date;
+	startDate?: string;
 }

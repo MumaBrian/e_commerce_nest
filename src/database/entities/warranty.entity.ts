@@ -17,7 +17,4 @@ export class Warranty {
 
 	@Column()
 	endDate: Date;
-
-	@Column('text')
-	details: string;
 }
