@@ -6,8 +6,6 @@ import {
 	DocumentBuilder,
 	SwaggerDocumentOptions,
 } from '@nestjs/swagger';
-import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
@@ -22,17 +20,6 @@ async function bootstrap() {
 		}),
 	);
 
-	if (process.env.SENTRY_ENVIRONMENT) {
-		Sentry.init({
-			dsn: process.env.SENTRY_DNS,
-			environment: process.env.SENTRY_ENVIRONMENT || 'production',
-			integrations: [nodeProfilingIntegration()],
-
-			tracesSampleRate: 1.0,
-
-			profilesSampleRate: 1.0,
-		});
-	}
 	const config = new DocumentBuilder()
 		.setTitle('E_Commerce')
 		.setDescription('An E_commerce application for developers')

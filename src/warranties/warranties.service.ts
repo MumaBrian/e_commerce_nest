@@ -81,4 +81,13 @@ export class WarrantiesService {
 
 		return 'Warranty claim failed. Warranty has expired or is invalid.';
 	}
+
+	async findAll(page: number = 1, limit: number = 10): Promise<Warranty[]> {
+		const skip = (page - 1) * limit;
+		return await this.warrantiesRepository.find({
+			skip,
+			take: limit,
+			order: { startDate: 'DESC' },
+		});
+	}
 }

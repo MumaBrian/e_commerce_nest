@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import {
+	Controller,
+	Get,
+	Post,
+	Body,
+	Param,
+	UseGuards,
+	Query,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -23,8 +31,11 @@ export class PaymentsController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return await this.paymentsService.findAll();
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.paymentsService.findAll(page, limit);
 	}
 
 	@Get(':id')

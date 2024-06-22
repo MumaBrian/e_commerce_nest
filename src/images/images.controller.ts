@@ -7,14 +7,27 @@ import {
 	Body,
 	UseGuards,
 	Patch,
+	UploadedFile,
+	UseInterceptors,
+	Query,
 } from '@nestjs/common';
 import { ImagesService } from './images.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../database/enums/user-role.enum';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+	ApiBearerAuth,
+	ApiTags,
+	ApiResponse,
+	ApiOperation,
+	ApiConsumes,
+	ApiBody,
+} from '@nestjs/swagger';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { UploadImageDto } from './dto/upload-image.dto';
 
 @ApiTags('images')
 @Controller('images')
@@ -34,8 +47,11 @@ export class ImagesController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return await this.imagesService.findAll();
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.imagesService.findAll(page, limit);
 	}
 
 	@Get(':id')
@@ -57,5 +73,43 @@ export class ImagesController {
 	@ApiBearerAuth('authenticationToken')
 	async remove(@Param('id') id: string) {
 		return await this.imagesService.remove(id);
+	}
+
+	@Post('upload')
+	@Roles(UserRole.Admin)
+	@ApiBearerAuth('authenticationToken')
+	@ApiOperation({ summary: 'Upload an image or file for a product' })
+	@ApiResponse({ status: 201, description: 'File uploaded successfully' })
+	@ApiResponse({ status: 400, description: 'Bad Request' })
+	@ApiResponse({ status: 401, description: 'Unauthorized' })
+	@ApiResponse({ status: 403, description: 'Forbidden' })
+	@ApiConsumes('multipart/form-data')
+	@ApiBody({
+		description: 'File to upload',
+		type: UploadImageDto,
+		schema: {
+			type: 'object',
+			properties: {
+				file: {
+					type: 'string',
+					format: 'binary',
+				},
+				productId: {
+					type: 'string',
+				},
+			},
+		},
+	})
+	@UseInterceptors(
+		FileInterceptor('file', {
+			storage: memoryStorage(),
+		}),
+	)
+	async uploadImage(
+		@UploadedFile() file: Express.Multer.File,
+		@Body() uploadImageDto: UploadImageDto,
+	) {
+		console.log('Uploaded file:', file);
+		return this.imagesService.uploadImage(file, uploadImageDto.productId);
 	}
 }

@@ -7,6 +7,7 @@ import {
 	Delete,
 	UseGuards,
 	Get,
+	Query,
 } from '@nestjs/common';
 import { OrderItemService } from './orderitems.service';
 import { CreateOrderItemDto } from './dto/create-order-item.dto';
@@ -33,13 +34,22 @@ export class OrderItemController {
 	}
 
 	@Get(':id')
+	@UseGuards(JwtAuthGuard)
+	@Roles(UserRole.Customer, UserRole.Admin)
+	@ApiBearerAuth('authenticationToken')
 	async getItem(@Param('id') id: string) {
 		return await this.orderItemService.getItem(id);
 	}
 
 	@Get()
-	async getAllItems() {
-		return await this.orderItemService.getAllItems();
+	@UseGuards(JwtAuthGuard)
+	@Roles(UserRole.Customer, UserRole.Admin)
+	@ApiBearerAuth('authenticationToken')
+	async getAllItems(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.orderItemService.getAllItems(page, limit);
 	}
 
 	@Patch(':id')

@@ -91,10 +91,19 @@ export class ReceiptsService {
 		return pdfPath;
 	}
 
-	async getAllReceipts() {
-		return this.receiptsRepository.find({
+	async getAllReceipts(page: number = 1, limit: number = 10) {
+		const [receipts, total] = await this.receiptsRepository.findAndCount({
 			relations: ['order', 'payment'],
+			take: limit,
+			skip: (page - 1) * limit,
 		});
+
+		return {
+			receipts,
+			total,
+			currentPage: page,
+			totalPages: Math.ceil(total / limit),
+		};
 	}
 
 	private async generatePdf(receipt: Receipt, pdfPath: string) {

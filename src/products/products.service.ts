@@ -60,7 +60,11 @@ export class ProductsService {
 				images: [image],
 			});
 
-			return await this.productsRepository.save(product);
+			image.product = product;
+
+			await this.productsRepository.save(product);
+
+			return product;
 		} catch (error) {
 			if (error instanceof BadRequestException) {
 				throw error;
@@ -69,10 +73,13 @@ export class ProductsService {
 		}
 	}
 
-	async findAll(): Promise<Product[]> {
+	async findAll(page: number = 1, limit: number = 10): Promise<Product[]> {
 		try {
+			const skip = (page - 1) * limit;
 			return await this.productsRepository.find({
-				relations: ['category'],
+				relations: ['category', 'images'],
+				skip,
+				take: limit,
 			});
 		} catch (error) {
 			throw new InternalServerErrorException('Failed to fetch products');
@@ -83,7 +90,7 @@ export class ProductsService {
 		try {
 			const product = await this.productsRepository.findOne({
 				where: { id },
-				relations: ['category'],
+				relations: ['category', 'images'],
 			});
 			if (!product) {
 				throw new NotFoundException(
@@ -132,7 +139,7 @@ export class ProductsService {
 					const updatedProduct =
 						await transactionalEntityManager.findOne(Product, {
 							where: { id },
-							relations: ['category'],
+							relations: ['category', 'images'],
 						});
 					if (!updatedProduct) {
 						throw new InternalServerErrorException(
@@ -140,11 +147,11 @@ export class ProductsService {
 						);
 					}
 
-					return updatedProduct; // Ensure to return the updated product
+					return updatedProduct;
 				},
 			);
 
-			return updatedProduct; // Return the result of the transaction
+			return updatedProduct;
 		} catch (error) {
 			if (
 				error instanceof NotFoundException ||

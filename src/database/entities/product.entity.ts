@@ -32,7 +32,6 @@ export class Product {
 
 	@OneToMany(() => Image, (image) => image.product, {
 		cascade: true,
-		onDelete: 'CASCADE',
 	})
 	images: Image[];
 

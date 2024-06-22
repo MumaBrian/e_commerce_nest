@@ -4,7 +4,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 import { Order } from '../database/entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderItem } from '../database/entities/order-item.entity';
@@ -78,10 +78,14 @@ export class OrdersService {
 		}
 	}
 
-	async findAll(): Promise<Order[]> {
-		return this.ordersRepository.find({
+	async findAll(page: number = 1, limit: number = 10): Promise<Order[]> {
+		const options: FindManyOptions<Order> = {
 			relations: ['customer', 'orderItems', 'orderItems.product'],
-		});
+			take: limit,
+			skip: (page - 1) * limit,
+		};
+
+		return this.ordersRepository.find(options);
 	}
 
 	async findOne(id: string): Promise<Order> {

@@ -121,9 +121,20 @@ export class OrderItemService {
 		return orderItem;
 	}
 
-	async getAllItems() {
-		return await this.orderItemsRepository.find({
-			relations: ['product', 'order'],
-		});
+	async getAllItems(page: number = 1, limit: number = 10) {
+		const skip = (page - 1) * limit;
+		const [items, totalItems] =
+			await this.orderItemsRepository.findAndCount({
+				relations: ['product', 'order'],
+				skip,
+				take: limit,
+			});
+
+		return {
+			items,
+			totalItems,
+			totalPages: Math.ceil(totalItems / limit),
+			currentPage: page,
+		};
 	}
 }

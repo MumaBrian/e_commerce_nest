@@ -1,4 +1,12 @@
-import { Controller, Post, Body, Param, UseGuards } from '@nestjs/common';
+import {
+	Controller,
+	Post,
+	Body,
+	Param,
+	UseGuards,
+	Get,
+	Query,
+} from '@nestjs/common';
 import { WarrantiesService } from './warranties.service';
 import { CreateWarrantyDto } from './dto/create-warranty.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -20,7 +28,7 @@ export class WarrantiesController {
 		return await this.warrantiesService.create(createWarrantyDto);
 	}
 
-	@Post('validate/:productId')
+	@Get('validate/:productId')
 	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
@@ -28,11 +36,22 @@ export class WarrantiesController {
 		return await this.warrantiesService.validateWarranty(productId);
 	}
 
-	@Post('claim/:productId')
+	@Get('claim/:productId')
 	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
 	async claimWarranty(@Param('productId') productId: string) {
 		return await this.warrantiesService.claimWarranty(productId);
+	}
+
+	@Get()
+	@UseGuards(JwtAuthGuard, SelfGuard)
+	@Roles(UserRole.Admin, UserRole.Customer)
+	@ApiBearerAuth('authenticationToken')
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.warrantiesService.findAll(page, limit);
 	}
 }

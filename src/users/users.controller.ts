@@ -7,6 +7,7 @@ import {
 	Delete,
 	UseGuards,
 	Put,
+	Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -26,8 +27,11 @@ export class UsersController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return await this.usersService.findAll();
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.usersService.findAll(page, limit);
 	}
 
 	@Get(':id')

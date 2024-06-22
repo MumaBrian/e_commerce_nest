@@ -7,6 +7,7 @@ import {
 	Param,
 	Delete,
 	UseGuards,
+	Query,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -33,8 +34,11 @@ export class CategoriesController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return await this.categoriesService.findAll();
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.categoriesService.findAll(page, limit);
 	}
 
 	@Get(':id')

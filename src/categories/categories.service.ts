@@ -39,9 +39,26 @@ export class CategoriesService {
 		}
 	}
 
-	async findAll(): Promise<Category[]> {
+	async findAll(
+		page: number,
+		limit: number,
+	): Promise<{
+		data: Category[];
+		total: number;
+		page: number;
+		limit: number;
+	}> {
 		try {
-			return await this.categoriesRepository.find();
+			const [data, total] = await this.categoriesRepository.findAndCount({
+				skip: (page - 1) * limit,
+				take: limit,
+			});
+			return {
+				data,
+				total,
+				page,
+				limit,
+			};
 		} catch (error) {
 			throw new InternalServerErrorException(
 				'Error finding categories:',
