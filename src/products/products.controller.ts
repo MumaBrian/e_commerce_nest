@@ -7,6 +7,7 @@ import {
 	Param,
 	Delete,
 	UseGuards,
+	Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -30,9 +31,15 @@ export class ProductsController {
 	}
 
 	@Get()
+	@UseGuards(JwtAuthGuard)
+	@Roles(UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return await this.productsService.findAll();
+	@ApiBearerAuth('authenticationToken')
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.productsService.findAll(page, limit);
 	}
 
 	@Get(':id')

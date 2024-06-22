@@ -60,9 +60,20 @@ export class CustomerService {
 		}
 	}
 
-	async findAll() {
+	async findAll(page: number, limit: number) {
 		try {
-			return await this.customersRepository.find();
+			const [customers, total] =
+				await this.customersRepository.findAndCount({
+					skip: (page - 1) * limit,
+					take: limit,
+				});
+
+			return {
+				data: customers,
+				total,
+				page,
+				lastPage: Math.ceil(total / limit),
+			};
 		} catch (error) {
 			throw new BadRequestException('Failed to fetch customers');
 		}

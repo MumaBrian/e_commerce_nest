@@ -69,10 +69,13 @@ export class ProductsService {
 		}
 	}
 
-	async findAll(): Promise<Product[]> {
+	async findAll(page: number = 1, limit: number = 10): Promise<Product[]> {
 		try {
+			const skip = (page - 1) * limit;
 			return await this.productsRepository.find({
 				relations: ['category'],
+				skip,
+				take: limit,
 			});
 		} catch (error) {
 			throw new InternalServerErrorException('Failed to fetch products');

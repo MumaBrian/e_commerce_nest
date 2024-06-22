@@ -9,6 +9,7 @@ import {
 	Patch,
 	UploadedFile,
 	UseInterceptors,
+	Query,
 } from '@nestjs/common';
 import { ImagesService } from './images.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -46,8 +47,11 @@ export class ImagesController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return await this.imagesService.findAll();
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.imagesService.findAll(page, limit);
 	}
 
 	@Get(':id')

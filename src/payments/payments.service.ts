@@ -38,9 +38,20 @@ export class PaymentsService {
 		return payment;
 	}
 
-	async findAll() {
+	async findAll(page: number = 1, limit: number = 10) {
 		try {
-			return await this.paymentsRepository.find();
+			const [payments, total] =
+				await this.paymentsRepository.findAndCount({
+					take: limit,
+					skip: (page - 1) * limit,
+				});
+
+			return {
+				data: payments,
+				page,
+				limit,
+				total,
+			};
 		} catch (error) {
 			throw new InternalServerErrorException(
 				`Failed to fetch payments: ${error.message}`,

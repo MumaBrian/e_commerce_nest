@@ -7,6 +7,7 @@ import {
 	Patch,
 	Delete,
 	UseGuards,
+	Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -32,8 +33,11 @@ export class OrdersController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return this.ordersService.findAll();
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return this.ordersService.findAll(page, limit);
 	}
 
 	@Get(':id')

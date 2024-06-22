@@ -39,9 +39,19 @@ export class ImagesService {
 		}
 	}
 
-	async findAll() {
+	async findAll(page: number, limit: number) {
 		try {
-			return await this.imagesRepository.find({ relations: ['product'] });
+			const [images, total] = await this.imagesRepository.findAndCount({
+				relations: ['product'],
+				skip: (page - 1) * limit,
+				take: limit,
+			});
+			return {
+				data: images,
+				total,
+				page,
+				limit,
+			};
 		} catch (error) {
 			throw new Error(`Failed to fetch images: ${error.message}`);
 		}

@@ -6,6 +6,7 @@ import {
 	UseGuards,
 	Body,
 	Res,
+	Query,
 } from '@nestjs/common';
 import { ReceiptsService } from './receipts.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -24,7 +25,7 @@ export class ReceiptsController {
 	constructor(private readonly receiptsService: ReceiptsService) {}
 
 	@Post('generate')
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Admin, UserRole.Customer)
 	@ApiBearerAuth('authenticationToken')
 	async generateReceipt(@Body() createReceiptsDto: CreateReceiptsDto) {
@@ -53,10 +54,12 @@ export class ReceiptsController {
 	}
 
 	@Get()
-	@UseGuards(JwtAuthGuard, SelfGuard)
 	@Roles(UserRole.Customer, UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async getAllReceipts() {
-		return this.receiptsService.getAllReceipts();
+	async getAllReceipts(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return this.receiptsService.getAllReceipts(page, limit);
 	}
 }

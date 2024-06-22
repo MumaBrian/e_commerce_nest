@@ -7,6 +7,7 @@ import {
 	Patch,
 	Delete,
 	UseGuards,
+	Query,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -33,8 +34,11 @@ export class CustomerController {
 	@UseGuards(JwtAuthGuard)
 	@Roles(UserRole.Admin)
 	@ApiBearerAuth('authenticationToken')
-	async findAll() {
-		return await this.customerService.findAll();
+	async findAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 10,
+	) {
+		return await this.customerService.findAll(page, limit);
 	}
 
 	@Get(':id')
