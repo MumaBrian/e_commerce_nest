@@ -16,6 +16,8 @@ import { ImagesModule } from './images/images.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { WarrantiesModule } from './warranties/warranties.module';
+import { RedisModule } from './redis/redis.module';
+import { CacheModule } from './cache/cache.module';
 @Module({
 	imports: [
 		AppConfigModule,
@@ -32,6 +34,8 @@ import { WarrantiesModule } from './warranties/warranties.module';
 		PaymentsModule,
 		ReceiptsModule,
 		WarrantiesModule,
+		RedisModule,
+		CacheModule,
 	],
 	providers: [
 		{

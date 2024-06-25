@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 import { UserRole } from 'src/database/enums/user-role.enum';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class UsersService {
@@ -22,6 +23,7 @@ export class UsersService {
 	constructor(
 		@InjectRepository(User)
 		private usersRepository: Repository<User>,
+		private cacheService: CacheService, // Inject CacheService
 	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<User> {
@@ -44,7 +46,10 @@ export class UsersService {
 				password: hashedPassword,
 			});
 
-			return await this.usersRepository.save(user);
+			const savedUser = await this.usersRepository.save(user);
+			await this.cacheService.del('users:all');
+
+			return savedUser;
 		} catch (error) {
 			this.logger.error('Error creating user:', error.message);
 			if (error instanceof ConflictException) {
@@ -55,30 +60,79 @@ export class UsersService {
 	}
 
 	async findAll(page: number = 1, limit: number = 10): Promise<User[]> {
-		const skip = (page - 1) * limit;
+		try {
+			const cacheKey = `users:all:${page}:${limit}`;
+			const cachedUsers = await this.cacheService.get(cacheKey);
 
-		return await this.usersRepository.find({
-			skip,
-			take: limit,
-		});
+			if (cachedUsers) {
+				return JSON.parse(cachedUsers);
+			}
+
+			const skip = (page - 1) * limit;
+			const users = await this.usersRepository.find({
+				skip,
+				take: limit,
+			});
+
+			await this.cacheService.set(cacheKey, JSON.stringify(users));
+			return users;
+		} catch (error) {
+			throw new InternalServerErrorException('Failed to fetch users');
+		}
 	}
 
 	async findOne(id: string): Promise<User> {
-		const user = await this.usersRepository.findOne({ where: { id } });
-		if (!user) {
-			this.logger.warn(`User with ID ${id} not found`);
-			throw new NotFoundException(`User with ID ${id} not found`);
+		try {
+			const cacheKey = `user:${id}`;
+			const cachedUser = await this.cacheService.get(cacheKey);
+
+			if (cachedUser) {
+				return JSON.parse(cachedUser);
+			}
+
+			const user = await this.usersRepository.findOne({ where: { id } });
+			if (!user) {
+				this.logger.warn(`User with ID ${id} not found`);
+				throw new NotFoundException(`User with ID ${id} not found`);
+			}
+
+			await this.cacheService.set(cacheKey, JSON.stringify(user));
+			return user;
+		} catch (error) {
+			if (error instanceof NotFoundException) {
+				throw error;
+			}
+			throw new InternalServerErrorException('Failed to fetch user');
 		}
-		return user;
 	}
 
 	async findByEmail(email: string): Promise<User> {
-		const user = await this.usersRepository.findOne({ where: { email } });
-		if (!user) {
-			this.logger.warn(`User with email ${email} not found`);
-			throw new NotFoundException(`User with email ${email} not found`);
+		try {
+			const cacheKey = `user:email:${email}`;
+			const cachedUser = await this.cacheService.get(cacheKey);
+
+			if (cachedUser) {
+				return JSON.parse(cachedUser);
+			}
+
+			const user = await this.usersRepository.findOne({
+				where: { email },
+			});
+			if (!user) {
+				this.logger.warn(`User with email ${email} not found`);
+				throw new NotFoundException(
+					`User with email ${email} not found`,
+				);
+			}
+
+			await this.cacheService.set(cacheKey, JSON.stringify(user));
+			return user;
+		} catch (error) {
+			if (error instanceof NotFoundException) {
+				throw error;
+			}
+			throw new InternalServerErrorException('Failed to fetch user');
 		}
-		return user;
 	}
 
 	async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
@@ -102,6 +156,9 @@ export class UsersService {
 				);
 			}
 
+			await this.cacheService.del(`user:${id}`);
+			await this.cacheService.del('users:all');
+
 			return updatedUser;
 		} catch (error) {
 			this.logger.error('Error updating user:', error.message);
@@ -124,6 +181,9 @@ export class UsersService {
 					`Failed to delete User with ID ${id}`,
 				);
 			}
+
+			await this.cacheService.del(`user:${id}`);
+			await this.cacheService.del('users:all');
 		} catch (error) {
 			this.logger.error('Error deleting user:', error.message);
 			throw new InternalServerErrorException('Error deleting user');
@@ -145,6 +205,10 @@ export class UsersService {
 			const updatedUser = await this.usersRepository.findOne({
 				where: { id },
 			});
+
+			await this.cacheService.del(`user:${id}`);
+			await this.cacheService.del('users:all');
+
 			return updatedUser;
 		} catch (error) {
 			this.logger.error('Error updating profile:', error.message);
@@ -178,6 +242,9 @@ export class UsersService {
 			user.password = hashedPassword;
 
 			await this.usersRepository.save(user);
+
+			await this.cacheService.del(`user:${id}`);
+			await this.cacheService.del('users:all');
 		} catch (error) {
 			this.logger.error('Error updating password:', error.message);
 			throw new InternalServerErrorException('Error updating password');
@@ -186,9 +253,22 @@ export class UsersService {
 
 	async findAdmin(): Promise<User | null> {
 		try {
-			return await this.usersRepository.findOne({
+			const cacheKey = 'user:admin';
+			const cachedAdmin = await this.cacheService.get(cacheKey);
+
+			if (cachedAdmin) {
+				return JSON.parse(cachedAdmin);
+			}
+
+			const admin = await this.usersRepository.findOne({
 				where: { roles: UserRole.Admin },
 			});
+
+			if (admin) {
+				await this.cacheService.set(cacheKey, JSON.stringify(admin));
+			}
+
+			return admin;
 		} catch (error) {
 			this.logger.error('Error finding admin:', error.message);
 			throw new InternalServerErrorException('Error finding admin');
