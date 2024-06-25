@@ -23,7 +23,7 @@ export class UsersService {
 	constructor(
 		@InjectRepository(User)
 		private usersRepository: Repository<User>,
-		private cacheService: CacheService, // Inject CacheService
+		private cacheService: CacheService,
 	) {}
 
 	async create(createUserDto: CreateUserDto): Promise<User> {

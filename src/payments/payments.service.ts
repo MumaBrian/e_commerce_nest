@@ -10,6 +10,7 @@ import { Payment } from '../database/entities/payment.entity';
 import { Order } from '../database/entities/order.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentStatus } from '../database/enums/payment-status.enum';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class PaymentsService {
@@ -18,6 +19,7 @@ export class PaymentsService {
 		private readonly paymentsRepository: Repository<Payment>,
 		@InjectRepository(Order)
 		private readonly ordersRepository: Repository<Order>,
+		private readonly cacheService: CacheService,
 	) {}
 
 	async create(createPaymentDto: CreatePaymentDto) {
@@ -60,6 +62,13 @@ export class PaymentsService {
 	}
 
 	async findOne(id: string) {
+		const cacheKey = `payment:${id}`;
+		const cachedPayment = await this.cacheService.get(cacheKey);
+
+		if (cachedPayment) {
+			return JSON.parse(cachedPayment);
+		}
+
 		const payment = await this.paymentsRepository.findOne({
 			where: { id },
 			relations: ['order'],
@@ -68,6 +77,8 @@ export class PaymentsService {
 		if (!payment) {
 			throw new NotFoundException(`Payment with id ${id} not found`);
 		}
+
+		await this.cacheService.set(cacheKey, JSON.stringify(payment));
 
 		return payment;
 	}

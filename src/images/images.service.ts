@@ -7,12 +7,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Image } from '../database/entities/image.entity';
-import { Product } from '../database/entities/product.entity';
 import { CreateImageDto } from './dto/create-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
 import { Express } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import { CacheService } from 'src/cache/cache.service';
+import { Product } from 'src/database/entities/product.entity';
 
 @Injectable()
 export class ImagesService {
@@ -21,13 +22,14 @@ export class ImagesService {
 		private imagesRepository: Repository<Image>,
 		@InjectRepository(Product)
 		private productsRepository: Repository<Product>,
+		private cacheService: CacheService,
 	) {}
 
 	async create(createImageDto: CreateImageDto) {
 		const { url } = createImageDto;
 
 		if (!url) {
-			throw new BadRequestException('URL and productId must be provided');
+			throw new BadRequestException('URL must be provided');
 		}
 
 		const image = this.imagesRepository.create({ url });
@@ -41,17 +43,25 @@ export class ImagesService {
 
 	async findAll(page: number, limit: number) {
 		try {
+			const cacheKey = `images:all:${page}:${limit}`;
+			const cachedImages = await this.cacheService.get(cacheKey);
+
+			if (cachedImages) {
+				return JSON.parse(cachedImages);
+			}
+
 			const [images, total] = await this.imagesRepository.findAndCount({
 				relations: ['product'],
 				skip: (page - 1) * limit,
 				take: limit,
 			});
-			return {
-				data: images,
-				total,
-				page,
-				limit,
-			};
+
+			await this.cacheService.set(
+				cacheKey,
+				JSON.stringify({ data: images, total, page, limit }),
+			);
+
+			return { data: images, total, page, limit };
 		} catch (error) {
 			throw new Error(`Failed to fetch images: ${error.message}`);
 		}
@@ -60,6 +70,13 @@ export class ImagesService {
 	async findOne(id: string) {
 		if (!id) {
 			throw new BadRequestException('ID must be provided');
+		}
+
+		const cacheKey = `image:${id}`;
+		const cachedImage = await this.cacheService.get(cacheKey);
+
+		if (cachedImage) {
+			return JSON.parse(cachedImage);
 		}
 
 		const image = await this.imagesRepository.findOne({
@@ -71,6 +88,8 @@ export class ImagesService {
 			throw new NotFoundException(`Image with id ${id} not found`);
 		}
 
+		await this.cacheService.set(cacheKey, JSON.stringify(image)); // Cache indefinitely or set TTL as required
+
 		return image;
 	}
 
@@ -80,7 +99,7 @@ export class ImagesService {
 		}
 
 		const image = await this.imagesRepository.findOne({
-			where: { id: id },
+			where: { id },
 		});
 		if (!image) {
 			throw new NotFoundException(`Image with id ${id} not found`);
@@ -96,6 +115,7 @@ export class ImagesService {
 			);
 		}
 	}
+
 	async remove(id: string) {
 		if (!id) {
 			throw new BadRequestException('ID must be provided');
@@ -111,6 +131,9 @@ export class ImagesService {
 
 		try {
 			await this.imagesRepository.delete(id);
+			await this.cacheService.del(`image:${id}`);
+			await this.cacheService.del('images:all');
+
 			return { message: `Image with id ${id} successfully deleted` };
 		} catch (error) {
 			throw new Error(`Failed to delete image: ${error.message}`);

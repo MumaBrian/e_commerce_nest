@@ -9,12 +9,14 @@ import { Repository } from 'typeorm';
 import { Category } from '../database/entities/category.entity';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class CategoriesService {
 	constructor(
 		@InjectRepository(Category)
 		private categoriesRepository: Repository<Category>,
+		private cacheService: CacheService,
 	) {}
 
 	async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
@@ -30,7 +32,10 @@ export class CategoriesService {
 
 			const category =
 				this.categoriesRepository.create(createCategoryDto);
-			return await this.categoriesRepository.save(category);
+			const savedCategory =
+				await this.categoriesRepository.save(category);
+			await this.cacheService.del('categories:all');
+			return savedCategory;
 		} catch (error) {
 			throw new InternalServerErrorException(
 				'Error creating category',
@@ -49,16 +54,27 @@ export class CategoriesService {
 		limit: number;
 	}> {
 		try {
+			const cacheKey = `categories:all:${page}:${limit}`;
+			const cachedCategories = await this.cacheService.get(cacheKey);
+
+			if (cachedCategories) {
+				return JSON.parse(cachedCategories);
+			}
+
 			const [data, total] = await this.categoriesRepository.findAndCount({
 				skip: (page - 1) * limit,
 				take: limit,
 			});
-			return {
+
+			const result = {
 				data,
 				total,
 				page,
 				limit,
 			};
+
+			await this.cacheService.set(cacheKey, JSON.stringify(result));
+			return result;
 		} catch (error) {
 			throw new InternalServerErrorException(
 				'Error finding categories:',
@@ -69,12 +85,21 @@ export class CategoriesService {
 
 	async findOne(id: string): Promise<Category> {
 		try {
+			const cacheKey = `category:${id}`;
+			const cachedCategory = await this.cacheService.get(cacheKey);
+
+			if (cachedCategory) {
+				return JSON.parse(cachedCategory);
+			}
+
 			const category = await this.categoriesRepository.findOne({
 				where: { id },
 			});
 			if (!category) {
 				throw new NotFoundException(`Category with ID ${id} not found`);
 			}
+
+			await this.cacheService.set(cacheKey, JSON.stringify(category));
 			return category;
 		} catch (error) {
 			console.error(
@@ -98,7 +123,13 @@ export class CategoriesService {
 			}
 
 			await this.categoriesRepository.update(id, updateCategoryDto);
-			return this.categoriesRepository.findOne({ where: { id } });
+			const updatedCategory = await this.categoriesRepository.findOne({
+				where: { id },
+			});
+
+			await this.cacheService.del(`category:${id}`);
+			await this.cacheService.del('categories:all');
+			return updatedCategory;
 		} catch (error) {
 			console.error(
 				`Error updating category with ID ${id}:`,
@@ -123,6 +154,9 @@ export class CategoriesService {
 					`Failed to delete category with ID ${id}`,
 				);
 			}
+
+			await this.cacheService.del(`category:${id}`);
+			await this.cacheService.del('categories:all');
 		} catch (error) {
 			console.error(
 				`Error deleting category with ID ${id}:`,

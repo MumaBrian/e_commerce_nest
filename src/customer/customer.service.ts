@@ -11,6 +11,7 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { Product } from '../database/entities/product.entity';
 import { Order } from '../database/entities/order.entity';
 import { User } from 'src/database/entities/user.entity';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class CustomerService {
@@ -23,6 +24,7 @@ export class CustomerService {
 		private productsRepository: Repository<Product>,
 		@InjectRepository(Order)
 		private ordersRepository: Repository<Order>,
+		private cacheService: CacheService,
 	) {}
 
 	async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
@@ -54,6 +56,8 @@ export class CustomerService {
 
 			const savedCustomer =
 				await this.customersRepository.save(newCustomer);
+			await this.cacheService.del('customers:all');
+
 			return savedCustomer;
 		} catch (error) {
 			throw new BadRequestException('Failed to create customer');
@@ -62,12 +66,20 @@ export class CustomerService {
 
 	async findAll(page: number, limit: number) {
 		try {
+			const cacheKey = `customers:all:${page}:${limit}`;
+			const cachedCustomers = await this.cacheService.get(cacheKey);
+
+			if (cachedCustomers) {
+				return JSON.parse(cachedCustomers);
+			}
+
 			const [customers, total] =
 				await this.customersRepository.findAndCount({
 					skip: (page - 1) * limit,
 					take: limit,
 				});
 
+			await this.cacheService.set(cacheKey, JSON.stringify(customers));
 			return {
 				data: customers,
 				total,
@@ -81,6 +93,13 @@ export class CustomerService {
 
 	async findOne(id: string) {
 		try {
+			const cacheKey = `customer:${id}`;
+			const cachedCustomer = await this.cacheService.get(cacheKey);
+
+			if (cachedCustomer) {
+				return JSON.parse(cachedCustomer);
+			}
+
 			const customer = await this.customersRepository.findOne({
 				where: { id },
 				relations: ['user'],
@@ -90,7 +109,8 @@ export class CustomerService {
 				throw new NotFoundException(`Customer with ID ${id} not found`);
 			}
 
-			return this.customersRepository.save(customer);
+			await this.cacheService.set(cacheKey, JSON.stringify(customer));
+			return customer;
 		} catch (error) {
 			throw new BadRequestException(
 				`Failed to fetch customer with ID ${id}`,
@@ -109,6 +129,9 @@ export class CustomerService {
 				throw new NotFoundException(`Customer with ID ${id} not found`);
 			}
 
+			await this.cacheService.del(`customer:${id}`);
+			await this.cacheService.del('customers:all');
+
 			return this.findOne(id);
 		} catch (error) {
 			console.error({ error });
@@ -125,6 +148,9 @@ export class CustomerService {
 			if (result.affected === 0) {
 				throw new NotFoundException(`Customer with ID ${id} not found`);
 			}
+
+			await this.cacheService.del(`customer:${id}`);
+			await this.cacheService.del('customers:all');
 		} catch (error) {
 			console.error({ error });
 			throw new BadRequestException(
@@ -223,6 +249,9 @@ export class CustomerService {
 			if (result.affected === 0) {
 				throw new NotFoundException(`Customer with ID ${id} not found`);
 			}
+
+			await this.cacheService.del(`customer:${id}`);
+			await this.cacheService.del('customers:all');
 
 			return this.findOne(id);
 		} catch (error) {

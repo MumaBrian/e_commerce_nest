@@ -8,6 +8,7 @@ import * as PDFDocument from 'pdfkit';
 import * as fs from 'fs';
 import * as path from 'path';
 import { CreateReceiptsDto } from './dto/create-receipts.dto';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class ReceiptsService {
@@ -18,6 +19,7 @@ export class ReceiptsService {
 		private ordersRepository: Repository<Order>,
 		@InjectRepository(Payment)
 		private paymentsRepository: Repository<Payment>,
+		private cacheService: CacheService,
 	) {}
 
 	async generateReceipt(createReceiptsDto: CreateReceiptsDto) {
@@ -68,14 +70,31 @@ export class ReceiptsService {
 		);
 		await this.generatePdf(savedReceipt, pdfPath);
 
+		await this.cacheService.del('allReceipts');
+
 		return savedReceipt;
 	}
 
 	async viewReceipt(id: string) {
-		return this.receiptsRepository.findOne({
+		const cacheKey = `receipt:${id}`;
+		const cachedReceipt = await this.cacheService.get(cacheKey);
+
+		if (cachedReceipt) {
+			return JSON.parse(cachedReceipt);
+		}
+
+		const receipt = await this.receiptsRepository.findOne({
 			where: { id },
 			relations: ['order', 'payment'],
 		});
+
+		if (!receipt) {
+			throw new NotFoundException('Receipt not found');
+		}
+
+		await this.cacheService.set(cacheKey, JSON.stringify(receipt));
+
+		return receipt;
 	}
 
 	async downloadReceipt(id: string) {
@@ -92,18 +111,29 @@ export class ReceiptsService {
 	}
 
 	async getAllReceipts(page: number = 1, limit: number = 10) {
+		const cacheKey = `allReceipts:${page}:${limit}`;
+		const cachedReceipts = await this.cacheService.get(cacheKey);
+
+		if (cachedReceipts) {
+			return JSON.parse(cachedReceipts);
+		}
+
 		const [receipts, total] = await this.receiptsRepository.findAndCount({
 			relations: ['order', 'payment'],
 			take: limit,
 			skip: (page - 1) * limit,
 		});
 
-		return {
+		const result = {
 			receipts,
 			total,
 			currentPage: page,
 			totalPages: Math.ceil(total / limit),
 		};
+
+		await this.cacheService.set(cacheKey, JSON.stringify(result));
+
+		return result;
 	}
 
 	private async generatePdf(receipt: Receipt, pdfPath: string) {
