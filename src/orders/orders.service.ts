@@ -11,6 +11,7 @@ import { OrderItem } from '../database/entities/order-item.entity';
 import { Product } from 'src/database/entities/product.entity';
 import { Customer } from 'src/database/entities/customer.entity';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class OrdersService {
@@ -23,6 +24,7 @@ export class OrdersService {
 		private productsRepository: Repository<Product>,
 		@InjectRepository(Customer)
 		private customersRepository: Repository<Customer>,
+		private cacheService: CacheService,
 	) {}
 
 	async create(createOrderDto: CreateOrderDto): Promise<Order> {
@@ -64,8 +66,10 @@ export class OrdersService {
 				status: orderStatus,
 				paymentMethod,
 			});
-			console.log({ order });
+
 			await this.ordersRepository.save(order);
+			await this.cacheService.del('orders:all');
+
 			return order;
 		} catch (error) {
 			if (
@@ -79,16 +83,34 @@ export class OrdersService {
 	}
 
 	async findAll(page: number = 1, limit: number = 10): Promise<Order[]> {
+		const cacheKey = `orders:all:${page}:${limit}`;
+		const cachedOrders = await this.cacheService.get(cacheKey);
+
+		if (cachedOrders) {
+			return JSON.parse(cachedOrders);
+		}
+
 		const options: FindManyOptions<Order> = {
 			relations: ['customer', 'orderItems', 'orderItems.product'],
 			take: limit,
 			skip: (page - 1) * limit,
 		};
 
-		return this.ordersRepository.find(options);
+		const orders = await this.ordersRepository.find(options);
+
+		await this.cacheService.set(cacheKey, JSON.stringify(orders));
+
+		return orders;
 	}
 
 	async findOne(id: string): Promise<Order> {
+		const cacheKey = `order:${id}`;
+		const cachedOrder = await this.cacheService.get(cacheKey);
+
+		if (cachedOrder) {
+			return JSON.parse(cachedOrder);
+		}
+
 		const order = await this.ordersRepository.findOne({
 			where: { id },
 			relations: ['customer', 'orderItems', 'orderItems.product'],
@@ -97,6 +119,8 @@ export class OrdersService {
 		if (!order) {
 			throw new NotFoundException(`Order with ID '${id}' not found`);
 		}
+
+		await this.cacheService.set(cacheKey, JSON.stringify(order));
 
 		return order;
 	}
@@ -128,7 +152,12 @@ export class OrdersService {
 			}
 
 			Object.assign(existingOrder, updateOrderDto);
-			return this.ordersRepository.save(existingOrder);
+			await this.ordersRepository.save(existingOrder);
+
+			await this.cacheService.del(`order:${id}`);
+			await this.cacheService.del('orders:all');
+
+			return existingOrder;
 		} catch (error) {
 			if (error instanceof NotFoundException) {
 				throw error;
@@ -145,6 +174,8 @@ export class OrdersService {
 		}
 
 		await this.ordersRepository.delete(id);
+		await this.cacheService.del(`order:${id}`);
+		await this.cacheService.del('orders:all');
 	}
 
 	async addOrderItem(orderId: string, orderItemId: string): Promise<Order> {
@@ -161,7 +192,12 @@ export class OrdersService {
 
 		order.orderItems.push(orderItem);
 		order.total += orderItem.quantity * orderItem.price;
-		return this.ordersRepository.save(order);
+
+		await this.ordersRepository.save(order);
+		await this.cacheService.del(`order:${orderId}`);
+		await this.cacheService.del('orders:all');
+
+		return order;
 	}
 
 	async removeOrderItem(
@@ -169,20 +205,24 @@ export class OrdersService {
 		orderItemId: string,
 	): Promise<Order> {
 		const order = await this.findOne(orderId);
-		const orderItem = order.orderItems.find(
+		const orderItemIndex = order.orderItems.findIndex(
 			(item) => item.id === orderItemId,
 		);
 
-		if (!orderItem) {
+		if (orderItemIndex === -1) {
 			throw new NotFoundException(
 				`Order item with ID '${orderItemId}' not found in order`,
 			);
 		}
 
-		order.orderItems = order.orderItems.filter(
-			(item) => item.id !== orderItemId,
-		);
+		const orderItem = order.orderItems[orderItemIndex];
+		order.orderItems.splice(orderItemIndex, 1);
 		order.total -= orderItem.quantity * orderItem.price;
-		return this.ordersRepository.save(order);
+
+		await this.ordersRepository.save(order);
+		await this.cacheService.del(`order:${orderId}`);
+		await this.cacheService.del('orders:all');
+
+		return order;
 	}
 }

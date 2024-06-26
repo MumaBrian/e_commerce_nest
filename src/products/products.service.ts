@@ -11,6 +11,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Category } from '../database/entities/category.entity';
 import { Image } from 'src/database/entities/image.entity';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class ProductsService {
@@ -21,6 +22,7 @@ export class ProductsService {
 		private categoriesRepository: Repository<Category>,
 		@InjectRepository(Image)
 		private imageRepository: Repository<Image>,
+		private cacheService: CacheService,
 	) {}
 
 	private async findCategoryByName(name: string): Promise<Category> {
@@ -63,6 +65,7 @@ export class ProductsService {
 			image.product = product;
 
 			await this.productsRepository.save(product);
+			await this.cacheService.del('products:all');
 
 			return product;
 		} catch (error) {
@@ -75,12 +78,22 @@ export class ProductsService {
 
 	async findAll(page: number = 1, limit: number = 10): Promise<Product[]> {
 		try {
+			const cacheKey = `products:all:${page}:${limit}`;
+			const cachedProducts = await this.cacheService.get(cacheKey);
+
+			if (cachedProducts) {
+				return JSON.parse(cachedProducts);
+			}
+
 			const skip = (page - 1) * limit;
-			return await this.productsRepository.find({
+			const products = await this.productsRepository.find({
 				relations: ['category', 'images'],
 				skip,
 				take: limit,
 			});
+
+			await this.cacheService.set(cacheKey, JSON.stringify(products));
+			return products;
 		} catch (error) {
 			throw new InternalServerErrorException('Failed to fetch products');
 		}
@@ -88,6 +101,13 @@ export class ProductsService {
 
 	async findOne(id: string): Promise<Product> {
 		try {
+			const cacheKey = `product:${id}`;
+			const cachedProduct = await this.cacheService.get(cacheKey);
+
+			if (cachedProduct) {
+				return JSON.parse(cachedProduct);
+			}
+
 			const product = await this.productsRepository.findOne({
 				where: { id },
 				relations: ['category', 'images'],
@@ -97,6 +117,8 @@ export class ProductsService {
 					`Product with ID '${id}' not found`,
 				);
 			}
+
+			await this.cacheService.set(cacheKey, JSON.stringify(product));
 			return product;
 		} catch (error) {
 			if (error instanceof NotFoundException) {
@@ -151,6 +173,9 @@ export class ProductsService {
 				},
 			);
 
+			await this.cacheService.del(`product:${id}`);
+			await this.cacheService.del('products:all');
+
 			return updatedProduct;
 		} catch (error) {
 			if (
@@ -175,6 +200,9 @@ export class ProductsService {
 			}
 
 			await this.productsRepository.remove(existingProduct);
+			await this.cacheService.del(`product:${id}`);
+			await this.cacheService.del('products:all');
+
 			return { message: `Product with ID '${id}' deleted successfully` };
 		} catch (error) {
 			if (error instanceof NotFoundException) {

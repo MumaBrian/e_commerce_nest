@@ -28,4 +28,32 @@ export class AppConfigService {
 	get databaseName(): string {
 		return this.configService.get<string>('database.database');
 	}
+
+	get jwtSecret(): string {
+		return this.configService.get<string>('jwt.secret');
+	}
+
+	get jwtExpiresIn(): string {
+		return this.configService.get<string>('jwt.expiresIn');
+	}
+
+	get corsOrigin(): string {
+		return this.configService.get<string>('cors.origin');
+	}
+
+	get port(): number {
+		return this.configService.get<number>('port');
+	}
+
+	get redisHost(): string {
+		return this.configService.get<string>('redis.host');
+	}
+
+	get redisPort(): number {
+		return this.configService.get<number>('redis.port');
+	}
+
+	get redisTtl(): number {
+		return this.configService.get<number>('redis.ttl');
+	}
 }

@@ -7,6 +7,7 @@ import { AppConfigService } from './config.service';
 	imports: [
 		ConfigModule.forRoot({
 			load: [configuration],
+			isGlobal: true,
 		}),
 	],
 	providers: [AppConfigService],
