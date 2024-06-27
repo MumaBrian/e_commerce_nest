@@ -56,4 +56,35 @@ export class AppConfigService {
 	get redisTtl(): number {
 		return this.configService.get<number>('redis.ttl');
 	}
+	get redisPassword(): string {
+		return this.configService.get<string>('redis.password');
+	}
+
+	get emailHost(): string {
+		return this.configService.get<string>('email.host');
+	}
+
+	get emailSubject(): string {
+		return this.configService.get<string>('email.subject');
+	}
+
+	get emailText(): string {
+		return this.configService.get<string>('email.text');
+	}
+
+	get emailHtml(): string {
+		return this.configService.get<string>('email.html');
+	}
+
+	get emailPort(): number {
+		return this.configService.get<number>('email.port');
+	}
+
+	get emailPassword(): string {
+		return this.configService.get<string>('email.password');
+	}
+
+	get emailUser(): string {
+		return this.configService.get<string>('email.user');
+	}
 }

@@ -54,9 +54,9 @@ export class UsersController {
 	}
 
 	@Delete(':id')
-	@UseGuards(JwtAuthGuard, SelfGuard)
-	@Roles(UserRole.Admin)
-	@ApiBearerAuth('authenticationToken')
+	// @UseGuards(JwtAuthGuard, SelfGuard)
+	// @Roles(UserRole.Admin)
+	// @ApiBearerAuth('authenticationToken')
 	async remove(@Param('id') id: string) {
 		return await this.usersService.remove(id);
 	}

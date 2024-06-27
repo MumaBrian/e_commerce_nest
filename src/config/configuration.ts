@@ -19,4 +19,13 @@ export default () => ({
 		password: process.env.REDIS_PASSWORD,
 		ttl: parseInt(process.env.REDIS_TTL, 10),
 	},
+	email: {
+		host: process.env.EMAIL_HOST,
+		subject: process.env.EMAIL_SUBJECT,
+		text: process.env.TEXT,
+		html: process.env.HTML,
+		port: process.env.EMAIL_PORT,
+		password: process.env.EMAIL_PASSWORD,
+		user: process.env.EMAIL_USER,
+	},
 });

@@ -18,6 +18,7 @@ import { ReceiptsModule } from './receipts/receipts.module';
 import { WarrantiesModule } from './warranties/warranties.module';
 import { RedisModule } from './redis/redis.module';
 import { CacheModule } from './cache/cache.module';
+import { MailModule } from './mail/mail.module';
 @Module({
 	imports: [
 		AppConfigModule,
@@ -36,6 +37,7 @@ import { CacheModule } from './cache/cache.module';
 		WarrantiesModule,
 		RedisModule,
 		CacheModule,
+		MailModule,
 	],
 	providers: [
 		{

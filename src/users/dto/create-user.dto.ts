@@ -14,7 +14,10 @@ export class CreateUserDto {
 	@IsNotEmpty()
 	password: string;
 
-	@IsString()
 	@IsEnum(UserRole)
 	role: UserRole;
+
+	@IsString()
+	@IsNotEmpty()
+	otp: string;
 }
