@@ -1,10 +1,20 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+	Controller,
+	Post,
+	Body,
+	UseGuards,
+	Get,
+	Req,
+	Res,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { Request, Response } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,5 +45,18 @@ export class AuthController {
 	): Promise<{ message: string }> {
 		await this.authService.resendOtp(resendOtp);
 		return { message: 'OTP has been resent' };
+	}
+
+	@Get('google')
+	@UseGuards(AuthGuard('google'))
+	async googleAuth(@Req() req) {}
+
+	@Get('google/redirect')
+	@UseGuards(AuthGuard('google'))
+	async googleAuthRedirect(@Req() req, @Res() res: Response) {
+		const jwt = await this.authService.login(req.user);
+		res.redirect(
+			`http://localhost:3000/api-docs#/?token=${jwt.access_token}`,
+		);
 	}
 }

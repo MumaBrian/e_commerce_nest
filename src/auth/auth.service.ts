@@ -49,6 +49,12 @@ export class AuthService {
 				'Invalid credentials',
 				HttpStatus.UNAUTHORIZED,
 			);
+		} else {
+			// If no password is set, the user should not be able to login via this method
+			throw new HttpException(
+				'Invalid credentials',
+				HttpStatus.UNAUTHORIZED,
+			);
 		}
 	}
 
@@ -69,17 +75,42 @@ export class AuthService {
 		return result;
 	}
 
-	async login(loginDto: LoginDto) {
-		const user = await this.validateUser(loginDto.email, loginDto.password);
-		const payload = {
-			username: user.username,
-			sub: user.id,
-			roles: user.roles,
-		};
-		return { access_token: this.jwtService.sign(payload) };
+	async validateOAuthLogin(user: any): Promise<any> {
+		const newUser = await this.checkExistingUser(user.email);
+		if (!newUser) {
+			const User = {
+				username: user.email.split('@')[0],
+				email: user.email,
+				password: null,
+				isVerified: true,
+				role: UserRole.Customer,
+				otp: null,
+			};
+
+			const createdUser = await this.usersService.create(User);
+			return createdUser;
+		}
+		return newUser;
 	}
 
-	private async checkExistingUser(email: string): Promise<void> {
+	async login(loginDto: LoginDto) {
+		try {
+			const user = await this.validateUser(
+				loginDto.email,
+				loginDto.password,
+			);
+			const payload = {
+				username: user.username,
+				sub: user.id,
+				roles: user.roles,
+			};
+			return { access_token: this.jwtService.sign(payload) };
+		} catch (error) {
+			throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
+		}
+	}
+
+	private async checkExistingUser(email: string): Promise<any> {
 		const existingUser = await this.usersService
 			.findByEmail(email)
 			.catch(() => null);

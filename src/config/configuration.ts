@@ -28,4 +28,9 @@ export default () => ({
 		password: process.env.EMAIL_PASSWORD,
 		user: process.env.EMAIL_USER,
 	},
+	google: {
+		client_id: process.env.GOOGLE_CLIENT_ID,
+		client_secret: process.env.GOOGLE_CLIENT_SECRET,
+		call_back_url: process.env.GOOGLE_CALLBACK_URL,
+	},
 });

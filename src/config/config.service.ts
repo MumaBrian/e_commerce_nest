@@ -87,4 +87,16 @@ export class AppConfigService {
 	get emailUser(): string {
 		return this.configService.get<string>('email.user');
 	}
+
+	get googleClientId(): string {
+		return this.configService.get<string>('google.client_id');
+	}
+
+	get googleClientSecret(): string {
+		return this.configService.get<string>('google.client_secret');
+	}
+
+	get googleCallBackUrl(): string {
+		return this.configService.get<string>('google.call_back_url');
+	}
 }

@@ -54,7 +54,11 @@ export class UsersService {
 			);
 		}
 
-		const hashedPassword = await bcrypt.hash(password, 10);
+		let hashedPassword = null;
+		if (password) {
+			hashedPassword = await bcrypt.hash(password, 10);
+		}
+		// const hashedPassword = await bcrypt.hash(password, 10);
 		const otpCreatedAt = new Date();
 
 		const user = this.usersRepository.create({
