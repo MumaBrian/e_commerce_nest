@@ -1,6 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { UserRole } from '../enums/user-role.enum';
-import * as bcrypt from 'bcrypt';
 
 @Entity()
 export class User {
@@ -13,16 +12,18 @@ export class User {
 	@Column({ unique: true })
 	email: string;
 
-	@Column()
+	@Column({ nullable: true })
 	password: string;
+
+	@Column({ nullable: true })
+	otp: string;
+
+	@Column({ nullable: true, type: 'timestamp' })
+	otpCreatedAt: Date;
+
+	@Column({ default: false })
+	isVerified: boolean;
 
 	@Column({ type: 'enum', enum: UserRole })
 	roles: UserRole;
-
-	@BeforeInsert()
-	async hashPassword() {
-		if (this.password) {
-			this.password = await bcrypt.hash(this.password, 10);
-		}
-	}
 }
