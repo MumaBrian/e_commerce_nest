@@ -58,7 +58,7 @@ export class UsersService {
 		if (password) {
 			hashedPassword = await bcrypt.hash(password, 10);
 		}
-		// const hashedPassword = await bcrypt.hash(password, 10);
+		console.table([password, hashedPassword]);
 		const otpCreatedAt = new Date();
 
 		const user = this.usersRepository.create({
@@ -182,5 +182,41 @@ export class UsersService {
 			});
 			return admin || null;
 		});
+	}
+
+	async updateRefreshToken(
+		userId: string,
+		refreshToken: string | null,
+	): Promise<void> {
+		await this.usersRepository.update(userId, { refreshToken });
+	}
+
+	async findById(id: string): Promise<User> {
+		const user = await this.usersRepository.findOne({ where: { id: id } });
+		if (!user) {
+			throw new NotFoundException(`User with ID ${id} not found`);
+		}
+		return user;
+	}
+
+	async updateResetToken(
+		userId: string,
+		resetToken: string,
+		resetTokenExpiry: Date,
+	): Promise<void> {
+		await this.usersRepository.update(userId, {
+			resetToken,
+			resetTokenExpiry,
+		});
+	}
+
+	async findByResetToken(token: string): Promise<User> {
+		const user = await this.usersRepository.findOne({
+			where: { resetToken: token },
+		});
+		if (!user) {
+			throw new NotFoundException('Invalid reset token');
+		}
+		return user;
 	}
 }
