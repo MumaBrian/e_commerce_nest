@@ -42,4 +42,24 @@ export class MailService {
 			throw error;
 		}
 	}
+
+	async sendPasswordReset(email: string, token: string) {
+		try {
+			const resetUrl = `http://your-app-url/reset-password?token=${token}`;
+			const info = await this.transporter.sendMail({
+				from: this.configService.emailUser,
+				to: email,
+				subject: 'Password Reset',
+				text: `You requested a password reset. Click this link to reset your password: ${resetUrl}`,
+			});
+			console.log(
+				`Password reset email sent successfully to ${email}: ${info.response}`,
+			);
+		} catch (error) {
+			console.error(
+				`Failed to send password reset email to ${email}: ${error.message}`,
+			);
+			throw error;
+		}
+	}
 }

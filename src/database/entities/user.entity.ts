@@ -26,4 +26,13 @@ export class User {
 
 	@Column({ type: 'enum', enum: UserRole })
 	roles: UserRole;
+
+	@Column({ nullable: true })
+	refreshToken?: string;
+
+	@Column({ nullable: true })
+	resetToken?: string;
+
+	@Column({ type: 'timestamp', nullable: true })
+	resetTokenExpiry?: Date;
 }

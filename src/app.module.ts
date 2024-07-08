@@ -19,6 +19,8 @@ import { WarrantiesModule } from './warranties/warranties.module';
 import { RedisModule } from './redis/redis.module';
 import { CacheModule } from './cache/cache.module';
 import { MailModule } from './mail/mail.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+
 @Module({
 	imports: [
 		AppConfigModule,
@@ -38,11 +40,21 @@ import { MailModule } from './mail/mail.module';
 		RedisModule,
 		CacheModule,
 		MailModule,
+		ThrottlerModule.forRoot([
+			{
+				ttl: 60,
+				limit: 10,
+			},
+		]),
 	],
 	providers: [
 		{
 			provide: APP_GUARD,
 			useClass: JwtAuthGuard,
+		},
+		{
+			provide: APP_GUARD,
+			useClass: ThrottlerGuard,
 		},
 	],
 })

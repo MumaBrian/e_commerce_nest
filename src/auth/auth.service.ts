@@ -3,6 +3,7 @@ import {
 	HttpException,
 	HttpStatus,
 	Injectable,
+	Logger,
 	NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -17,15 +18,24 @@ import { User } from 'src/database/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { randomBytes } from 'crypto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import Redis from 'ioredis';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class AuthService {
+	private readonly logger = new Logger(AuthService.name);
+	private redisClient: Redis;
 	constructor(
 		@InjectRepository(User)
 		private usersRepository: Repository<User>,
 		private usersService: UsersService,
 		private jwtService: JwtService,
 		private mailService: MailService,
+		private cacheService: CacheService,
 	) {}
 
 	private async findUserByEmail(email: string): Promise<User> {
@@ -44,13 +54,8 @@ export class AuthService {
 		hashedPassword: string,
 	): Promise<void> {
 		const isPasswordValid = await bcrypt.compare(pass, hashedPassword);
+
 		if (!isPasswordValid) {
-			throw new HttpException(
-				'Invalid credentials',
-				HttpStatus.UNAUTHORIZED,
-			);
-		} else {
-			// If no password is set, the user should not be able to login via this method
 			throw new HttpException(
 				'Invalid credentials',
 				HttpStatus.UNAUTHORIZED,
@@ -108,6 +113,71 @@ export class AuthService {
 		} catch (error) {
 			throw new HttpException(error.message, HttpStatus.UNAUTHORIZED);
 		}
+	}
+
+	async refreshToken(tokenDto: RefreshTokenDto) {
+		try {
+			const token = tokenDto.token;
+			const payload = this.jwtService.verify(token);
+			const user = await this.usersService.findById(payload.sub);
+			if (!user || user.refreshToken !== token) {
+				throw new HttpException(
+					'Invalid refresh token',
+					HttpStatus.UNAUTHORIZED,
+				);
+			}
+
+			const newAccessToken = this.jwtService.sign({
+				username: user.username,
+				sub: user.id,
+				roles: user.roles,
+			});
+
+			return { access_token: newAccessToken };
+		} catch (error) {
+			throw new HttpException(
+				'Invalid refresh token',
+				HttpStatus.UNAUTHORIZED,
+			);
+		}
+	}
+
+	async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+		const { email } = forgotPasswordDto;
+		const user = await this.usersService.findByEmail(email);
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const resetToken = randomBytes(32).toString('hex');
+		const resetTokenExpiry = new Date();
+		resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1);
+
+		await this.usersService.updateResetToken(
+			user.id,
+			resetToken,
+			resetTokenExpiry,
+		);
+		await this.mailService.sendPasswordReset(email, resetToken);
+	}
+
+	async resetPassword(resetPasswordDto: ResetPasswordDto) {
+		const { token, newPassword } = resetPasswordDto;
+		const user = await this.usersService.findByResetToken(token);
+		if (!user || user.resetTokenExpiry < new Date()) {
+			throw new HttpException(
+				'Invalid or expired reset token',
+				HttpStatus.UNAUTHORIZED,
+			);
+		}
+
+		const hashedPassword = await bcrypt.hash(newPassword, 10);
+		user.password = hashedPassword;
+		user.resetToken = null;
+		user.resetTokenExpiry = null;
+
+		await this.usersRepository.save(user);
+		await this.cacheService.del(`user:email:${user.email}`);
 	}
 
 	private async checkExistingUser(email: string): Promise<any> {

@@ -14,24 +14,30 @@ import { ApiTags } from '@nestjs/swagger';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Request, Response } from 'express';
-
+import { Response } from 'express';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
 	@Post('login')
+	@UseGuards(ThrottlerGuard)
 	async login(@Body() loginDto: LoginDto) {
 		return this.authService.login(loginDto);
 	}
 
 	@Post('register')
+	@UseGuards(ThrottlerGuard)
 	async register(@Body() registerDto: RegisterDto) {
 		return this.authService.register(registerDto);
 	}
 
 	@Post('verify-otp')
+	@UseGuards(ThrottlerGuard)
 	async verifyOtp(
 		@Body() verifyOtpDto: VerifyOtpDto,
 	): Promise<{ message: string }> {
@@ -40,6 +46,7 @@ export class AuthController {
 	}
 
 	@Post('resend-otp')
+	@UseGuards(ThrottlerGuard)
 	async resendOtp(
 		@Body() resendOtp: ResendOtpDto,
 	): Promise<{ message: string }> {
@@ -48,7 +55,7 @@ export class AuthController {
 	}
 
 	@Get('google')
-	@UseGuards(AuthGuard('google'))
+	@UseGuards(AuthGuard('google'), ThrottlerGuard)
 	async googleAuth(@Req() req) {}
 
 	@Get('google/redirect')
@@ -58,5 +65,28 @@ export class AuthController {
 		res.redirect(
 			`http://localhost:3000/api-docs#/?token=${jwt.access_token}`,
 		);
+	}
+
+	@Post('refresh-token')
+	async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+		return this.authService.refreshToken(refreshTokenDto);
+	}
+
+	@Post('forgot-password')
+	@UseGuards(ThrottlerGuard)
+	async forgotPassword(
+		@Body() forgotPasswordDto: ForgotPasswordDto,
+	): Promise<{ message: string }> {
+		await this.authService.forgotPassword(forgotPasswordDto);
+		return { message: 'Password reset link sent to email' };
+	}
+
+	@Post('reset-password')
+	@UseGuards(ThrottlerGuard)
+	async resetPassword(
+		@Body() resetPasswordDto: ResetPasswordDto,
+	): Promise<{ message: string }> {
+		await this.authService.resetPassword(resetPasswordDto);
+		return { message: 'Password reset successfully' };
 	}
 }
