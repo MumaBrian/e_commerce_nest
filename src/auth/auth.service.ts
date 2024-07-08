@@ -23,6 +23,7 @@ import { randomBytes } from 'crypto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import Redis from 'ioredis';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,7 @@ export class AuthService {
 		private usersService: UsersService,
 		private jwtService: JwtService,
 		private mailService: MailService,
+		private cacheService: CacheService,
 	) {}
 
 	private async findUserByEmail(email: string): Promise<User> {
@@ -52,7 +54,7 @@ export class AuthService {
 		hashedPassword: string,
 	): Promise<void> {
 		const isPasswordValid = await bcrypt.compare(pass, hashedPassword);
-		console.table({ password: isPasswordValid });
+
 		if (!isPasswordValid) {
 			throw new HttpException(
 				'Invalid credentials',
@@ -175,7 +177,9 @@ export class AuthService {
 		user.resetTokenExpiry = null;
 
 		await this.usersRepository.save(user);
+		await this.cacheService.del(`user:email:${user.email}`);
 	}
+
 	private async checkExistingUser(email: string): Promise<any> {
 		const existingUser = await this.usersService
 			.findByEmail(email)

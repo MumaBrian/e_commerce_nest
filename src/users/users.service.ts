@@ -58,7 +58,7 @@ export class UsersService {
 		if (password) {
 			hashedPassword = await bcrypt.hash(password, 10);
 		}
-		console.table([password, hashedPassword]);
+
 		const otpCreatedAt = new Date();
 
 		const user = this.usersRepository.create({
