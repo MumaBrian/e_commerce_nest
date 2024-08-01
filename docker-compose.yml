@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: mysql-ecommerce
+    environment:
+      MYSQL_ROOT_PASSWORD: 675113774Mba?
+      MYSQL_DATABASE: ecommerce
+      MYSQL_USER: muma
+      MYSQL_PASSWORD: 675113774Mba?
+    networks:
+      - my-app-network
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: ecommerce-app
+    networks:
+      - my-app-network
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: muma
+      DB_PASSWORD: 675113774Mba?
+      DB_NAME: ecommerce
+      JWT_SECRET: your_jwt_secret
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 2YkxN+vdzkp1LmOx4fMO0mnDPMqbeus3M9Tcn1kJqirrdfe3x6KnMoLmx2sia1I6qtzUBcm9I9OjNp66
+
+  redis:
+    image: redis:latest
+    container_name: redis-container
+    command: redis-server --requirepass 2YkxN+vdzkp1LmOx4fMO0mnDPMqbeus3M9Tcn1kJqirrdfe3x6KnMoLmx2sia1I6qtzUBcm9I9OjNp66
+    networks:
+      - my-app-network
+    ports:
+      - "6379:6379"
+
+networks:
+  my-app-network:
+
+volumes:
+  mysql-data:
