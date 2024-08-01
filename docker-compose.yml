@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   mysql:
-    image: mysql:latest
+    image: mysql:5.7
     container_name: mysql-ecommerce
     environment:
       MYSQL_ROOT_PASSWORD: 675113774Mba?
@@ -25,6 +25,7 @@ services:
       - "4000:4000"
     depends_on:
       - mysql
+      - redis
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
